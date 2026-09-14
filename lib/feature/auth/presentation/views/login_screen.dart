@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
 import 'package:flutter_instagram_clone/feature/auth/presentation/views/signup_screen.dart';
+import 'package:flutter_instagram_clone/main_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -38,7 +39,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       text: 'Login',
                       onPressed: () {
                         // Navigate to Main Screen
-                      },
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return MainScreen();
+                            },
+                          ),
+                        );
+                       },
                     ),
                   ),
                 ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/ig_button.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/section_title.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_suggested_user.dart';
+import 'package:flutter_instagram_clone/main_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -112,6 +113,14 @@ class _FollowSuggestionsScreenState extends State<FollowSuggestionsScreen> {
                   text: 'Next',
                   onPressed: () {
                     // Navigate to main screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return MainScreen();
+                        },
+                      ),
+                    );
                   },
                 ),
               ),
