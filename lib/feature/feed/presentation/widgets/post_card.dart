@@ -2,10 +2,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
+import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/post_options_bottom_sheet.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/post_video_player.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
+
+import '../../../profile/presentation/views/user_profile_screen.dart';
 
 class PostCard extends StatefulWidget {
   final Map<String, dynamic> snap;
@@ -102,6 +105,23 @@ class _PostCardState extends State<PostCard> {
             child: GestureDetector(
               onTap: () {
                 // Nav to profile screen
+                final user = {
+                  'username': widget.snap['username'],
+                  'profilePic': widget.snap['profilePic'],
+                  'name': widget.snap['name'],
+                  'bio': widget.snap['bio'] ?? 'Goal Setting',
+                  'followers': 40303,
+                  'following': 3020,
+                  'posts': 9,
+                };
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return UserProfileScreen(user: user);
+                    },
+                  ),
+                );
               },
               child: Row(
                 children: [
@@ -180,6 +200,16 @@ class _PostCardState extends State<PostCard> {
                       IconButton(
                         onPressed: () {
                           // show post options bottomsSheet
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Color(0xff00080E),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(20),
+                              ),
+                            ),
+                            builder: (context) => PostOptionsBottomSheet(),
+                          );
                         },
                         icon: Icon(
                           Icons.more_vert,
