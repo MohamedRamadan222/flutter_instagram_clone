@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class ReelsScreen extends StatefulWidget {
-  const ReelsScreen({super.key});
+  final int initialIndex;
+
+  const ReelsScreen({super.key, this.initialIndex = 0});
 
   @override
   State<ReelsScreen> createState() => _ReelsScreenState();

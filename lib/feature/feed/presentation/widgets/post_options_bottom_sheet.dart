@@ -35,9 +35,54 @@ class PostOptionsBottomSheet extends StatelessWidget {
                 ],
               ),
             ),
+            SizedBox(height: 16),
+            Divider(color: Colors.white.withValues(alpha: 0.2)),
+            // list items
+            _SheetItem(icon: Icons.star_border, title: 'Add to favorite'),
+            _SheetItem(icon: Icons.person_remove_outlined, title: 'Unfollow'),
+            _SheetItem(
+              icon: Icons.info_outline,
+              title: 'Why you\'re seeing this post',
+            ),
+            _SheetItem(icon: Icons.visibility_off_outlined, title: 'Hide'),
+            _SheetItem(icon: Icons.person_off_outlined, title: 'Restrict'),
+            _SheetItem(icon: Icons.report_outlined, title: 'Report',isDestructive: true,),
+            SizedBox(height: 10),
+
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SheetItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final bool isDestructive;
+
+  const _SheetItem({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: ListTile(
+        leading: Icon(icon, color: isDestructive ? Colors.red : Colors.white),
+        title: Text(title,
+        style: GoogleFonts.outfit(
+          color: isDestructive ? Colors.red : Colors.white,
+          fontSize: 14,
+        ),
+      ),
+        onTap: (){
+          Navigator.pop(context);
+        },
+      )
     );
   }
 }

@@ -79,4 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true; // keeps start alive
 }

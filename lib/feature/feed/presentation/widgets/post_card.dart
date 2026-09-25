@@ -2,12 +2,18 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
+import 'package:flutter_instagram_clone/feature/comments/presentation/views/comments_screen.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/post_options_bottom_sheet.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/post_video_player.dart';
+import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/save_to_collection_bottom_sheet.dart';
+import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/share_post_bottom_sheet.dart';
+import 'package:flutter_instagram_clone/feature/reels/presentation/views/reels_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 
+import '../../../../core/utils/app_bottom_sheet.dart';
+import '../../../../core/utils/reel_dummy_data.dart';
 import '../../../profile/presentation/views/user_profile_screen.dart';
 
 class PostCard extends StatefulWidget {
@@ -29,7 +35,7 @@ class _PostCardState extends State<PostCard> {
   int _sharesCount = 0;
   late bool _isFollowingPostUser;
 
-  bool _isBookMarked = false;
+  final bool _isBookMarked = false;
   bool _isReposted = false;
 
   bool _isExpanded = false;
@@ -226,9 +232,25 @@ class _PostCardState extends State<PostCard> {
           // image section
           GestureDetector(
             onTap: () {
-              setState(() {
-                _showHeart = !_showHeart;
-              });
+              final media = widget.snap['media'];
+              // check if post contains only 1 video
+              if (media.length == 1 && media['0']['type'] == 'video') {
+                final videoUrl = media['0']['reelId'];
+
+                // find reel index with same video
+                final index = ReelDummyData.reels.indexWhere(
+                  (reel) => reel['id'] == videoUrl,
+                );
+
+                if (index != -1) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ReelsScreen(initialIndex: index),
+                    ),
+                  );
+                }
+              }
             },
             child: SizedBox(
               height: 320,
@@ -397,6 +419,10 @@ class _PostCardState extends State<PostCard> {
                   IconButton(
                     onPressed: () {
                       // show comment bottomSheet
+                      showAppBottomSheet(
+                        context: context,
+                        child: CommentsScreen(post: widget.snap),
+                      );
                     },
                     icon: Image.asset(
                       'assets/icons/comment.png',
@@ -447,6 +473,21 @@ class _PostCardState extends State<PostCard> {
                   IconButton(
                     onPressed: () {
                       // show share post bottomSheet
+                      setState(() {
+                        _sharesCount++;
+                      });
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
+                        ),
+                        builder: (context) =>
+                            SharePostBottomSheet(post: widget.snap),
+                      );
                     },
                     icon: Image.asset(
                       'assets/icons/message_icon.png',
@@ -469,6 +510,19 @@ class _PostCardState extends State<PostCard> {
               IconButton(
                 onPressed: () {
                   // save to collection bottomSheet
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                    ),
+                    builder: (context) => SaveToCollectionBottomSheet(
+                      post: widget.snap,
+                      parentContext: context,
+                    ),
+                  );
                 },
                 icon: Icon(
                   _isBookMarked
@@ -557,7 +611,11 @@ class _PostCardState extends State<PostCard> {
                 if (widget.snap['comments'] > 0)
                   GestureDetector(
                     onTap: () {
-                      // show comment bottomSheet
+                      // show comments bottomSheet
+                      showAppBottomSheet(
+                        context: context,
+                        child: CommentsScreen(post: widget.snap),
+                      );
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
