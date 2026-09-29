@@ -1,6 +1,7 @@
 class ThreadsDummyData {
   static const List<Map<String, dynamic>> threads = [
     {
+      'id': 'thread_1',
       'username': 'omar.khaled',
       'profilePic':
           'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop',
@@ -14,6 +15,7 @@ class ThreadsDummyData {
       'isVerified': false,
     },
     {
+      'id': 'thread_2',
       'username': 'fatima.noor',
       'profilePic':
           'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop',
@@ -28,6 +30,7 @@ class ThreadsDummyData {
       'isVerified': true,
     },
     {
+      'id': 'thread_3',
       'username': 'bilal.ibrahim',
       'profilePic':
           'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=400&auto=format&fit=crop',
@@ -41,6 +44,7 @@ class ThreadsDummyData {
       'isVerified': true,
     },
     {
+      'id': 'thread_4',
       'username': 'layla.hassan',
       'profilePic':
           'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop',
@@ -55,6 +59,7 @@ class ThreadsDummyData {
       'isVerified': false,
     },
     {
+      'id': 'thread_5',
       'username': 'yusuf.ali',
       'profilePic':
           'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop',
@@ -68,6 +73,7 @@ class ThreadsDummyData {
       'isVerified': false,
     },
     {
+      'id': 'thread_6',
       'username': 'aisha.mahmoud',
       'profilePic':
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop',
@@ -82,6 +88,7 @@ class ThreadsDummyData {
       'isVerified': false,
     },
     {
+      'id': 'thread_7',
       'username': 'hamza.yassin',
       'profilePic':
           'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=400&auto=format&fit=crop',

@@ -112,8 +112,6 @@ class _ReelPage extends ConsumerWidget {
                 label: 'Share',
                 onTap: () => _shareReel(context),
               ),
-              SizedBox(height: 16.h),
-              const _Action(icon: Icons.more_vert, label: ''),
             ],
           ),
         ),

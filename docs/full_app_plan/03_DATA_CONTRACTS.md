@@ -5,6 +5,7 @@ Keep UI field names stable. Backend must return the same keys.
 ## Thread (`threads_dummy_data.dart:2`)
 
 ```
+id: String (stable key for the threads-likes store),
 username: String, profilePic: String(url), timeAgo: String (UI only),
 text: String, likes: int, replies: int, reposts: int,
 image: String? (nullable), isVerified: bool
@@ -12,6 +13,7 @@ image: String? (nullable), isVerified: bool
 
 Backend: `threads(id, user_id, text, image_url?, likes_count, replies_count, reposts_count, created_at)`.
 `timeAgo` is derived client-side with `timeago` package. Source is `ThreadsDummyData.threads` (`DummyData.threads` alias removed in Phase 1).
+`id` was added in Phase 2 to key the threads-likes store (previously `username|timeAgo`); backend `threads.id` maps 1:1.
 
 ## Post (`post_dummy_data.dart:2`)
 

@@ -97,9 +97,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     fit: StackFit.expand,
                     children: [
                       CachedNetworkImage(
-                        imageUrl: isVideo
-                            ? 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=400&auto=format&fit=crop'
-                            : item['url'],
+                        imageUrl: (item['thumbnail'] ?? item['url']) as String,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Shimmer.fromColors(
                           baseColor: AppColors.shimmerBase,

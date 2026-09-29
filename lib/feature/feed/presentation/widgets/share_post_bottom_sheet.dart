@@ -16,9 +16,9 @@ class SharePostBottomSheet extends StatefulWidget {
 
 class _SharePostBottomSheetState extends State<SharePostBottomSheet> {
   Future<void> _copyLink() async {
-    // posts have no stable id yet; username+likes is a deterministic dummy token
+    // posts carry a stable id since Phase 2 (03_DATA_CONTRACTS.md)
     await Clipboard.setData(
-      ClipboardData(text: 'ig://post/${widget.post['username']}/${widget.post['likes']}'),
+      ClipboardData(text: 'ig://post/${widget.post['id']}'),
     );
     if (!mounted) return;
     Navigator.pop(context);

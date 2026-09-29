@@ -77,11 +77,19 @@ class PostReactionsStore
     state = {...state, postId: r.copyWith(saved: !r.saved)};
   }
 
+  /// Sets the saved flag outright, so the save sheet can write its selection
+  /// back to the same store the feed bookmark reads (P2-2).
+  void setSaved(String postId, bool saved) {
+    final r = of(postId);
+    state = {...state, postId: r.copyWith(saved: saved)};
+  }
+
   void toggleRepost(String postId) {
     final r = of(postId);
     state = {
       ...state,
       postId: r.copyWith(
+        reposted: !r.reposted,
         reposts: r.reposts + (r.reposted ? -1 : 1),
       ),
     };

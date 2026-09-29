@@ -102,6 +102,8 @@ class DummyData {
       "type": "video",
       "url":
           "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
+      "thumbnail":
+          "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=400&auto=format&fit=crop",
     },
     {
       "type": "image",
@@ -112,6 +114,8 @@ class DummyData {
       "type": "video",
       "url":
           "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      "thumbnail":
+          "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=400&auto=format&fit=crop",
     },
     {
       "type": "image",

@@ -1,12 +1,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_instagram_clone/core/state/post_reactions_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 
-class SaveToCollectionBottomSheet extends StatefulWidget {
+class SaveToCollectionBottomSheet extends ConsumerStatefulWidget {
   final Map post;
   final BuildContext parentContext;
 
@@ -17,13 +19,28 @@ class SaveToCollectionBottomSheet extends StatefulWidget {
   });
 
   @override
-  State<SaveToCollectionBottomSheet> createState() =>
+  ConsumerState<SaveToCollectionBottomSheet> createState() =>
       _SaveToCollectionBottomSheetState();
 }
 
 class _SaveToCollectionBottomSheetState
-    extends State<SaveToCollectionBottomSheet> {
-  final Set<String> _savedTo = {};
+    extends ConsumerState<SaveToCollectionBottomSheet> {
+  late final Set<String> _savedTo;
+
+  String get _postId => widget.post['id'] as String;
+
+  @override
+  void initState() {
+    super.initState();
+    // Seed from the reactions store so the sheet agrees with the bookmark
+    // icon: a post that is already saved opens with a collection selected
+    // (P2-2; collections themselves are a later phase).
+    _savedTo = {};
+    final saved = ref.read(postReactionsProvider)[_postId]?.saved ?? false;
+    if (saved && DummyData.collections.isNotEmpty) {
+      _savedTo.add(DummyData.collections.first['name'] as String);
+    }
+  }
 
   void _toggleCollection(String name) {
     setState(() {
@@ -31,6 +48,11 @@ class _SaveToCollectionBottomSheetState
         _savedTo.add(name);
       }
     });
+    // Write back into the same store the feed bookmark reads, so both
+    // save states can never diverge.
+    ref
+        .read(postReactionsProvider.notifier)
+        .setSaved(_postId, _savedTo.isNotEmpty);
   }
 
   @override
@@ -108,7 +130,9 @@ class _SaveToCollectionBottomSheetState
                 Navigator.pop(context);
                 ScaffoldMessenger.of(widget.parentContext).showSnackBar(
                   const SnackBar(
-                    content: Text('New collections come with Phase 2'),
+                    content: Text(
+                      'Creating collections is coming in a later phase',
+                    ),
                   ),
                 );
               },

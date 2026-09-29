@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_instagram_clone/core/utils/dummy_suggested_user.dart';
 import 'package:flutter_instagram_clone/core/utils/post_dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/reel_dummy_data.dart';
 
@@ -22,6 +23,11 @@ class FollowStore extends Notifier<Map<String, bool>> {
         reel['username'] as String,
         () => reel['isFollowing'] == true,
       );
+    }
+    // Suggested-user model defaults fill in anyone not covered above, so the
+    // store and the model agree from the start (P2-4).
+    for (final user in dummySuggestedUsers) {
+      map.putIfAbsent(user.username, () => user.isFollowing);
     }
     return map;
   }

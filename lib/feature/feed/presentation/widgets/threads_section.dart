@@ -73,12 +73,12 @@ class _ThreadCard extends ConsumerWidget {
 
   const _ThreadCard({required this.thread});
 
-  String get _likeKey => '${thread['username']}|${thread['timeAgo']}';
+  String get threadId => '${thread['username']}|${thread['timeAgo']}';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final liked =
-        ref.watch(threadsLikesProvider.select((s) => s.contains(_likeKey)));
+        ref.watch(threadsLikesProvider.select((s) => s.contains(threadId)));
     final String? image = thread['image'] as String?;
     final bool hasImage = image != null && image.isNotEmpty;
 
@@ -167,7 +167,7 @@ class _ThreadCard extends ConsumerWidget {
             children: [
               GestureDetector(
               onTap: () =>
-                  ref.read(threadsLikesProvider.notifier).toggle(_likeKey),
+                  ref.read(threadsLikesProvider.notifier).toggle(threadId),
               child: Row(
                 children: [
                   Icon(

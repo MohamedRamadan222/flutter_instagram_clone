@@ -1,8 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/common/widgets/ig_follow_button.dart';
+import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
 import 'package:flutter_instagram_clone/core/utils/notifications_dummy_data.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
@@ -56,20 +59,17 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _Tile extends StatefulWidget {
+class _Tile extends ConsumerWidget {
   final Map<String, dynamic> item;
   const _Tile(this.item);
 
   @override
-  State<_Tile> createState() => _TileState();
-}
-
-class _TileState extends State<_Tile> {
-  bool _isFollowing = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final item = widget.item;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final item = this.item;
+    final username = item['username'] as String;
+    final isFollowing = ref.watch(
+      followProvider.select((follows) => follows[username] ?? false),
+    );
     return ListTile(
       leading: CustomCircleAvatar(imgUrl: item['profilePic'], radius: 20.r),
       title: RichText(
@@ -104,22 +104,10 @@ class _TileState extends State<_Tile> {
                 child: Container(color: Colors.black),
               ),
             )
-          : SizedBox(
-              height: 30.h,
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() => _isFollowing = !_isFollowing);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isFollowing
-                      ? Colors.grey.shade800
-                      : Colors.blue,
-                ),
-                child: Text(
-                  _isFollowing ? 'Following' : 'Follow',
-                  style: GoogleFonts.outfit(color: Colors.white),
-                ),
-              ),
+          : IgFollowButton(
+              isFollowing: isFollowing,
+              onTap: () =>
+                  ref.read(followProvider.notifier).toggle(username),
             ),
     );
   }

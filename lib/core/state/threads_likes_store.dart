@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Liked-thread keys for this session (P2-2). Key shape: `username|timeAgo`,
-/// since threads have no stable id yet.
+/// Liked-thread ids for this session (P2-2). Keyed by the stable `id` added
+/// to `threads_dummy_data.dart` in Phase 2 (`thread_N`).
 class ThreadsLikesStore extends Notifier<Set<String>> {
   @override
   Set<String> build() => {};
