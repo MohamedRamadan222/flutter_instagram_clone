@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_instagram_clone/core/data/backend_data_source.dart';
+import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/post_dummy_data.dart';
 
 /// Session state of one post's interactive counters.
@@ -70,11 +72,22 @@ class PostReactionsStore
         likes: r.likes + (r.liked ? -1 : 1),
       ),
     };
+    // Phase 5: persist when a backend is configured (best-effort).
+    ref.read(backendDataSourceProvider).togglePostLike(
+          postId: postId,
+          username: DummyData.currentUser['username'] as String,
+          liked: r.liked,
+        );
   }
 
   void toggleSave(String postId) {
     final r = of(postId);
     state = {...state, postId: r.copyWith(saved: !r.saved)};
+    ref.read(backendDataSourceProvider).togglePostSave(
+          postId: postId,
+          username: DummyData.currentUser['username'] as String,
+          saved: r.saved,
+        );
   }
 
   /// Sets the saved flag outright, so the save sheet can write its selection
@@ -92,14 +105,33 @@ class PostReactionsStore
     state = {
       ...state,
       id: PostReactions(
-        liked: false,
+        liked: post['liked'] ?? false,
         likes: post['likes'] as int? ?? 0,
-        saved: false,
+        saved: post['saved'] ?? false,
         reposted: false,
         reposts: post['reposts'] as int? ?? 0,
         shares: post['shares'] as int? ?? 0,
       ),
     };
+  }
+
+  /// Seeds reaction state for a hydrated backend page (P5-3), keeping any
+  /// session mutations that already happened.
+  void seedBatch(List<Map<String, dynamic>> posts) {
+    final next = <String, PostReactions>{};
+    for (final post in posts) {
+      final id = post['id'] as String;
+      final existing = state[id];
+      next[id] = PostReactions(
+        liked: post['liked'] ?? existing?.liked ?? false,
+        likes: post['likes'] as int? ?? existing?.likes ?? 0,
+        saved: post['saved'] ?? existing?.saved ?? false,
+        reposted: existing?.reposted ?? false,
+        reposts: post['reposts'] as int? ?? existing?.reposts ?? 0,
+        shares: post['shares'] as int? ?? existing?.shares ?? 0,
+      );
+    }
+    state = {...state, ...next};
   }
 
   void toggleRepost(String postId) {

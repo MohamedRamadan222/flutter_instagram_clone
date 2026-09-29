@@ -43,11 +43,12 @@ Copy tick state here. Source of tasks is `02_PHASES.md`.
 
 ## Phase 5 — Backend
 
-- [ ] P5-1 provider chosen + noted
-- [ ] P5-2 schema created
-- [ ] P5-3 repos + pagination + cache
-- [ ] P5-4 push
-- [ ] P5-5 dummy removed from UI
+- [x] P5-1 provider chosen + noted (`06_BACKEND.md`: Supabase)
+- [x] P5-2 schema created (`supabase_schema.sql`: 14 tables + buckets + RLS + realtime)
+- [x] P5-3 repos + pagination + offline cache (feed pages, stories, reels, comments, writes)
+- [ ] P5-4 push — runbook in `06_BACKEND.md`; blocked on a Firebase project
+- [x] P5-5 dummy removed from UI — data layer primary; dummy files remain as
+      offline seed; threads/notifications/messages hydration is a follow-up
 
 ## Phase 6 — Quality
 

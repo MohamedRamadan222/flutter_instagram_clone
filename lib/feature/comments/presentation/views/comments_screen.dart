@@ -28,6 +28,13 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
   String get _postId => (widget.post['id'] ?? 'unknown') as String;
 
   @override
+  void initState() {
+    super.initState();
+    // P5-3: replace dummy comments with backend rows when configured.
+    ref.read(commentsProvider.notifier).hydrate(_postId);
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();

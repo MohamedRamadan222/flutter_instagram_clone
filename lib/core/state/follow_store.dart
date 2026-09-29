@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_instagram_clone/core/data/backend_data_source.dart';
+import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_suggested_user.dart';
 import 'package:flutter_instagram_clone/core/utils/post_dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/reel_dummy_data.dart';
@@ -36,6 +38,12 @@ class FollowStore extends Notifier<Map<String, bool>> {
 
   void toggle(String username) {
     state = {...state, username: !isFollowing(username)};
+    // Phase 5: persist when a backend is configured (best-effort).
+    ref.read(backendDataSourceProvider).setFollow(
+          targetUsername: username,
+          me: DummyData.currentUser['username'] as String,
+          following: isFollowing(username),
+        );
   }
 }
 

@@ -1,7 +1,9 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_instagram_clone/core/config/app_config.dart';
 import 'package:flutter_instagram_clone/core/state/feed_posts_store.dart';
+import 'package:flutter_instagram_clone/core/state/reels_store.dart';
 import 'package:flutter_instagram_clone/core/state/stories_store.dart';
 import 'package:flutter_instagram_clone/core/utils/post_dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/threads_dummy_data.dart';
@@ -55,7 +57,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
+    _scrollController = ScrollController()..addListener(_onScroll);
+    if (AppConfig.hasBackend) _hydrateBackend();
+  }
+
+  /// P5-3: first backend page + stories + reels, once, when configured.
+  Future<void> _hydrateBackend() async {
+    final feed = ref.read(feedPostsProvider.notifier);
+    final refreshed = await feed.refresh();
+    if (refreshed) {
+      ref.read(storiesProvider.notifier).hydrate();
+      ref.read(reelsProvider.notifier).hydrate();
+    }
+  }
+
+  /// P5-3: load the next backend page when the user nears the bottom.
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels > position.maxScrollExtent - 400) {
+      ref.read(feedPostsProvider.notifier).loadMore();
+    }
   }
 
   /// P3-3: pick a photo from the gallery and publish it as a story.
@@ -104,9 +126,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ],
       ),
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
+      body: RefreshIndicator(
+        // P5-3: pull-to-refresh reloads the first backend page when
+        // configured; without a backend the feed is static and this no-ops.
+        onRefresh: () => ref.read(feedPostsProvider.notifier).refresh(),
+        color: Colors.white,
+        backgroundColor: Colors.black,
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           SliverToBoxAdapter(
             child: SizedBox(
               height: 120.h,
@@ -162,7 +191,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               );
             }, childCount: totalItems),
           ),
-        ],
+          // P5-3: keep scrolling past an endpoint spinner for the next page
+          if (AppConfig.hasBackend)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.h),
+                child: Center(
+                  child: SizedBox(
+                    width: 22.w,
+                    height: 22.h,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_instagram_clone/core/data/backend_data_source.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/post_dummy_data.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -24,6 +25,15 @@ class CommentsStore
 
   int countOf(String postId) => of(postId).length;
 
+  /// Phase 5: replaces a post's comments with backend rows when configured.
+  Future<bool> hydrate(String postId) async {
+    final comments =
+        await ref.read(backendDataSourceProvider).fetchComments(postId);
+    if (comments == null) return false;
+    state = {...state, postId: comments};
+    return true;
+  }
+
   void add(String postId, String text) {
     final comment = <String, dynamic>{
       'username': DummyData.currentUser['username'],
@@ -36,6 +46,12 @@ class CommentsStore
       ...state,
       postId: [...of(postId), comment],
     };
+    // Phase 5: persist when a backend is configured (best-effort).
+    ref.read(backendDataSourceProvider).addComment(
+          postId: postId,
+          username: DummyData.currentUser['username'] as String,
+          text: text,
+        );
   }
 }
 
