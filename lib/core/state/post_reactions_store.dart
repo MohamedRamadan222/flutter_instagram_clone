@@ -84,6 +84,24 @@ class PostReactionsStore
     state = {...state, postId: r.copyWith(saved: saved)};
   }
 
+  /// Registers a freshly created post (Phase 3) so the feed card has
+  /// reaction state for it. No-op when the post is already known.
+  void seedPost(Map<String, dynamic> post) {
+    final id = post['id'] as String;
+    if (state.containsKey(id)) return;
+    state = {
+      ...state,
+      id: PostReactions(
+        liked: false,
+        likes: post['likes'] as int? ?? 0,
+        saved: false,
+        reposted: false,
+        reposts: post['reposts'] as int? ?? 0,
+        shares: post['shares'] as int? ?? 0,
+      ),
+    };
+  }
+
   void toggleRepost(String postId) {
     final r = of(postId);
     state = {

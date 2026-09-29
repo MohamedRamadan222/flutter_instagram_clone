@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -131,15 +132,22 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
               controller: _pageController,
               itemCount: _pages.length,
               onPageChanged: _onPageChanged,
-              itemBuilder: (context, index) => CachedNetworkImage(
-                imageUrl: _pages[index].imageUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Shimmer.fromColors(
-                  baseColor: AppColors.shimmerBase,
-                  highlightColor: AppColors.shimmerHighlight,
-                  child: Container(color: Colors.black),
-                ),
-              ),
+              itemBuilder: (context, index) {
+                final url = _pages[index].imageUrl;
+                if (url.startsWith('http')) {
+                  return CachedNetworkImage(
+                    imageUrl: url,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Shimmer.fromColors(
+                      baseColor: AppColors.shimmerBase,
+                      highlightColor: AppColors.shimmerHighlight,
+                      child: Container(color: Colors.black),
+                    ),
+                  );
+                }
+                // Phase 3: locally picked story media
+                return Image.file(File(url), fit: BoxFit.cover);
+              },
             ),
             // per-story progress bar of the current user
             Positioned(

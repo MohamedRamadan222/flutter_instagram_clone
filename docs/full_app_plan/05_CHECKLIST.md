@@ -29,11 +29,11 @@ Copy tick state here. Source of tasks is `02_PHASES.md`.
 
 ## Phase 3 — Create flows
 
-- [ ] P3-1 media deps
-- [ ] P3-2 new post
-- [ ] P3-3 new story
-- [ ] P3-4 new reel
-- [ ] P3-5 add button wired
+- [x] P3-1 media deps (image_picker, video_thumbnail, permission_handler)
+- [x] P3-2 new post (multi-image → caption → top of feed)
+- [x] P3-3 new story (gallery → your-story ring)
+- [x] P3-4 new reel (video → thumbnail → top of reels)
+- [x] P3-5 add button wired (feed + reels tab)
 
 ## Phase 4 — Auth + nav
 

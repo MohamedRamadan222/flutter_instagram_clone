@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
@@ -248,15 +250,24 @@ class _PostCardState extends ConsumerState<PostCard> {
                       itemBuilder: (context, index) {
                         final media = widget.snap['media'][index];
                         if (media['type'] == 'image') {
-                          return CachedNetworkImage(
-                            imageUrl: media['url'],
+                          final url = media['url'] as String;
+                          if (url.startsWith('http')) {
+                            return CachedNetworkImage(
+                              imageUrl: url,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              placeholder: (context, url) => Shimmer.fromColors(
+                                baseColor: Colors.grey.shade900,
+                                highlightColor: Colors.grey.shade900,
+                                child: Container(color: Colors.black),
+                              ),
+                            );
+                          }
+                          // Phase 3: locally picked post media
+                          return Image.file(
+                            File(url),
                             fit: BoxFit.cover,
                             width: double.infinity,
-                            placeholder: (context, url) => Shimmer.fromColors(
-                              baseColor: Colors.grey.shade900,
-                              highlightColor: Colors.grey.shade900,
-                              child: Container(color: Colors.black),
-                            ),
                           );
                         }
 

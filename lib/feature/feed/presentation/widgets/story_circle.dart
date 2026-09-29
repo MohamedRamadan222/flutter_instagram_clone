@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
-import 'package:flutter_instagram_clone/core/utils/stories_dummy_data.dart';
+import 'package:flutter_instagram_clone/core/state/stories_store.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/views/story_view_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class StoryCircle extends StatelessWidget {
+class StoryCircle extends ConsumerWidget {
   final Map<String, dynamic> story;
   final bool? forceSeen;
   final VoidCallback? onViewed;
+
+  /// Called when the tapped entry is the user's own empty story ring
+  /// (opens the picker instead of the viewer, P3-3).
+  final VoidCallback? onAddStory;
 
   const StoryCircle({
     super.key,
     required this.story,
     this.forceSeen,
     this.onViewed,
+    this.onAddStory,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     bool hasStory = story['hasStory'] ?? true;
     bool isSeen = (story['isSeen'] ?? false) || (forceSeen ?? false);
     bool isLive = story['isLive'] ?? false;
@@ -26,14 +32,20 @@ class StoryCircle extends StatelessWidget {
 
     return GestureDetector(
       onTap: () async {
-        final idx = StoriesDummyData.stories.indexWhere(
+        // Your own empty ring is the "add story" button (P3-3).
+        if (isUsernameYourStory && !hasStory) {
+          onAddStory?.call();
+          return;
+        }
+        final allStories = ref.read(storiesProvider);
+        final idx = allStories.indexWhere(
           (s) => s['username'] == story['username'],
         );
         await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => StoryViewScreen(
-              stories: StoriesDummyData.stories,
+              stories: allStories,
               initialIndex: idx < 0 ? 0 : idx,
             ),
           ),
@@ -119,7 +131,7 @@ class StoryCircle extends StatelessWidget {
             ),
             SizedBox(height: 5.h),
             Text(
-              story['username'],
+              isUsernameYourStory ? 'Your story' : story['username'],
               style: GoogleFonts.outfit(
                 fontSize: 12.sp,
                 color: isUsernameYourStory ? Colors.grey : Colors.white,

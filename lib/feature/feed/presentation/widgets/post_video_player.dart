@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -19,7 +21,12 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
   @override
   void initState() {
     super.initState();
-    controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+    // Phase 3: locally picked reels/videos arrive as file paths, remote ones
+    // as http(s) URLs.
+    final isRemote = widget.videoUrl.startsWith('http');
+    controller = isRemote
+        ? VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+        : VideoPlayerController.file(File(widget.videoUrl))
       ..initialize().then((_) {
         setState(() {
           _isInit = true;

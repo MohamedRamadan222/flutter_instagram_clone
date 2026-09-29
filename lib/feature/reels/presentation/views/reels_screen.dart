@@ -2,25 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
 import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/state/reels_likes_store.dart';
+import 'package:flutter_instagram_clone/core/state/reels_store.dart';
 import 'package:flutter_instagram_clone/core/utils/app_bottom_sheet.dart';
-import 'package:flutter_instagram_clone/core/utils/reel_dummy_data.dart';
 import 'package:flutter_instagram_clone/feature/comments/presentation/views/comments_screen.dart';
+import 'package:flutter_instagram_clone/feature/create/presentation/views/create_reel_screen.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/post_video_player.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/share_post_bottom_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ReelsScreen extends StatefulWidget {
+class ReelsScreen extends ConsumerStatefulWidget {
   final int initialIndex;
 
   const ReelsScreen({super.key, this.initialIndex = 0});
 
   @override
-  State<ReelsScreen> createState() => _ReelsScreenState();
+  ConsumerState<ReelsScreen> createState() => _ReelsScreenState();
 }
 
-class _ReelsScreenState extends State<ReelsScreen> {
+class _ReelsScreenState extends ConsumerState<ReelsScreen> {
   late final PageController _controller;
 
   @override
@@ -37,9 +38,25 @@ class _ReelsScreenState extends State<ReelsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final reels = ReelDummyData.reels;
+    final reels = ref.watch(reelsProvider);
     return Scaffold(
       backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        actions: [
+          // P3-4/P3-5: create a new reel from the reels tab
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CreateReelScreen()),
+              );
+            },
+            icon: const Icon(Icons.camera_alt_outlined),
+          ),
+        ],
+      ),
       body: PageView.builder(
         controller: _controller,
         scrollDirection: Axis.vertical,

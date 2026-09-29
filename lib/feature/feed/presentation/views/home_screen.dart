@@ -1,28 +1,33 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_instagram_clone/core/state/feed_posts_store.dart';
+import 'package:flutter_instagram_clone/core/state/stories_store.dart';
 import 'package:flutter_instagram_clone/core/utils/post_dummy_data.dart';
-import 'package:flutter_instagram_clone/core/utils/stories_dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/threads_dummy_data.dart';
+import 'package:flutter_instagram_clone/feature/create/presentation/views/create_post_screen.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/suggested_users_section.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/threads_section.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'activity_screen.dart';
 import '../widgets/post_card.dart';
 import '../widgets/story_circle.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
+class _HomeScreenState extends ConsumerState<HomeScreen>
     with AutomaticKeepAliveClientMixin {
   final Random _random = Random();
+  final ImagePicker _picker = ImagePicker();
 
   // stories marked as seen during this session (P1-7)
   final Set<String> _seenStories = {};
@@ -30,8 +35,8 @@ class _HomeScreenState extends State<HomeScreen>
   // scroll controller to preserve position
   late final ScrollController _scrollController;
 
-  // random indices for special sections (start from 1 to avoid first post)
-  // total items = posts + 2 extra sections, valid sliver indices are 0..totalItems-1
+  // random indices for special sections (start from 1 to avoid first post),
+  // computed against the seeded feed; posts only grow afterwards (P3-2).
   int get _totalItems => PostDummyData.posts.length + 2;
 
   late final int suggestedIndex =
@@ -53,13 +58,21 @@ class _HomeScreenState extends State<HomeScreen>
     _scrollController = ScrollController();
   }
 
+  /// P3-3: pick a photo from the gallery and publish it as a story.
+  Future<void> _publishStory() async {
+    final picked = await _picker.pickImage(source: ImageSource.gallery);
+    if (picked == null || !mounted) return;
+    ref.read(storiesProvider.notifier).publishStory(picked.path);
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final totalItems = _totalItems;
+    final posts = ref.watch(feedPostsProvider);
+    final stories = ref.watch(storiesProvider);
+    final totalItems = posts.length + 2;
     return Scaffold(
       appBar: AppBar(
-        // P3-5 re-adds the add-post button once the create flow exists.
         title: Text(
           'Instagram',
           style: GoogleFonts.grandHotel(
@@ -70,6 +83,16 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         centerTitle: true,
         actions: [
+          // P3-5: create a new post from the feed
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CreatePostScreen()),
+              );
+            },
+            icon: const Icon(Icons.add_box_outlined),
+          ),
           IconButton(
             onPressed: () {
               Navigator.push(
@@ -89,9 +112,9 @@ class _HomeScreenState extends State<HomeScreen>
               height: 120.h,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: StoriesDummyData.stories.length,
+                itemCount: stories.length,
                 itemBuilder: (context, index) {
-                  final story = StoriesDummyData.stories[index];
+                  final story = stories[index];
                   return StoryCircle(
                     story: story,
                     forceSeen: _seenStories.contains(story['username']),
@@ -101,6 +124,9 @@ class _HomeScreenState extends State<HomeScreen>
                         _seenStories.add(story['username']);
                       });
                     },
+                    onAddStory: story['userName'] == 'Your story'
+                        ? _publishStory
+                        : null,
                   );
                 },
               ),
@@ -127,12 +153,11 @@ class _HomeScreenState extends State<HomeScreen>
               if (index > threadsIndex) numInsertedBefore++;
 
               final postIndex = index - numInsertedBefore;
-              if (postIndex < 0 ||
-                  postIndex >= PostDummyData.posts.length) {
+              if (postIndex < 0 || postIndex >= posts.length) {
                 return const SizedBox.shrink();
               }
               return PostCard(
-                snap: PostDummyData.posts[postIndex],
+                snap: posts[postIndex],
                 isMyPost: false,
               );
             }, childCount: totalItems),
