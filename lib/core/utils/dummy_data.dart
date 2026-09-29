@@ -179,44 +179,6 @@ class DummyData {
     },
   ];
 
-  static const List<Map<String, dynamic>> suggestedUsers = [
-    {
-      "username": "yusuf.ali",
-      "name": "Yusuf Ali",
-      "image":
-          "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop",
-      "mutual": 3,
-    },
-    {
-      "username": "fatima.noor",
-      "name": "Fatima Noor",
-      "image":
-          "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop",
-      "mutual": 5,
-    },
-    {
-      "username": "layla.hassan",
-      "name": "Layla Hassan",
-      "image":
-          "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop",
-      "mutual": 1,
-    },
-    {
-      "username": "omar.khaled",
-      "name": "Omar Khaled",
-      "image":
-          "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
-      "mutual": 8,
-    },
-    {
-      "username": "hamza.yassin",
-      "name": "Hamza Yassin",
-      "image":
-          "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=400&auto=format&fit=crop",
-      "mutual": 2,
-    },
-  ];
-
   static const List<Map<String, dynamic>> savedPosts = [
     {
       "id": "post1",

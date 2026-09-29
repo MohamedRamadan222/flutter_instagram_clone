@@ -232,10 +232,10 @@ class _PostCardState extends State<PostCard> {
           // image section
           GestureDetector(
             onTap: () {
-              final media = widget.snap['media'];
+              final media = widget.snap['media'] as List;
               // check if post contains only 1 video
-              if (media.length == 1 && media['0']['type'] == 'video') {
-                final videoUrl = media['0']['reelId'];
+              if (media.length == 1 && media[0]['type'] == 'video') {
+                final videoUrl = media[0]['reelId'];
 
                 // find reel index with same video
                 final index = ReelDummyData.reels.indexWhere(
@@ -595,7 +595,7 @@ class _PostCardState extends State<PostCard> {
                             child: Padding(
                               padding: EdgeInsets.only(top: 2),
                               child: Text(
-                                _isExpanded ? 'less' : 'true',
+                                _isExpanded ? 'less' : 'more',
                                 style: GoogleFonts.outfit(
                                   color: Colors.grey,
                                   fontSize: 13,

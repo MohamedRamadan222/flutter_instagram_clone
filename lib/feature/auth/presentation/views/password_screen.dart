@@ -107,7 +107,14 @@ class _PasswordScreenState extends State<PasswordScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content:
+                            Text('Password help comes in Phase 4 (auth)'),
+                      ),
+                    );
+                  },
                   child: Text(
                     'Learn more',
                     style: GoogleFonts.outfit(

@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_instagram_clone/feature/profile/presentation/views/profile_screen.dart';
 
-class UserProfileScreen extends StatefulWidget {
+class UserProfileScreen extends StatelessWidget {
   final Map<String, dynamic> user;
 
   const UserProfileScreen({super.key, required this.user});
 
   @override
-  State<UserProfileScreen> createState() => _UserProfileScreenState();
-}
-
-class _UserProfileScreenState extends State<UserProfileScreen> {
-  @override
   Widget build(BuildContext context) {
-    return Scaffold();
+    return ProfileContent(user: user, isMe: false);
   }
 }

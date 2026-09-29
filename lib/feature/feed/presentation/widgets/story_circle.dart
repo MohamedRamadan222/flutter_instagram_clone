@@ -1,23 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/utils/stories_dummy_data.dart';
+import 'package:flutter_instagram_clone/feature/feed/presentation/views/story_view_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class StoryCircle extends StatelessWidget {
   final Map<String, dynamic> story;
+  final bool? forceSeen;
+  final VoidCallback? onViewed;
 
-  const StoryCircle({super.key, required this.story});
+  const StoryCircle({
+    super.key,
+    required this.story,
+    this.forceSeen,
+    this.onViewed,
+  });
 
   @override
   Widget build(BuildContext context) {
     bool hasStory = story['hasStory'] ?? true;
-    bool isSeen = story['isSeen'] ?? false;
+    bool isSeen = (story['isSeen'] ?? false) || (forceSeen ?? false);
     bool isLive = story['isLive'] ?? false;
     bool isUsernameYourStory = story['userName'] == 'Your story';
 
     return GestureDetector(
-      onTap: () {
-        // Nav to story view screen
+      onTap: () async {
+        final idx = StoriesDummyData.stories.indexWhere(
+          (s) => s['username'] == story['username'],
+        );
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => StoryViewScreen(
+              stories: StoriesDummyData.stories,
+              initialIndex: idx < 0 ? 0 : idx,
+            ),
+          ),
+        );
+        // mark as seen once the viewer is closed (P1-7)
+        onViewed?.call();
       },
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),

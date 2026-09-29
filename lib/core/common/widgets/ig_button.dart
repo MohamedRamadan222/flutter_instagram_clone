@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class IGButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isPrimary;
   final bool isLoading;
   final double height;

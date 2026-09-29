@@ -62,7 +62,6 @@ class _SheetItem extends StatelessWidget {
   final bool isDestructive;
 
   const _SheetItem({
-    super.key,
     required this.icon,
     required this.title,
     this.isDestructive = false,
@@ -91,7 +90,7 @@ class _TopAction extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _TopAction({super.key, required this.icon, required this.label});
+  const _TopAction({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {

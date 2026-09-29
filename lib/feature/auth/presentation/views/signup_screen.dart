@@ -87,7 +87,15 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Notification settings come in Phase 5 (backend)',
+                          ),
+                        ),
+                      );
+                    },
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.symmetric(horizontal: 6.w),
                       minimumSize: Size(0, 30.h),
