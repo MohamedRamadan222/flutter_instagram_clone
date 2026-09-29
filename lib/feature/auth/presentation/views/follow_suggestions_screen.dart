@@ -1,31 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/ig_button.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/section_title.dart';
+import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_suggested_user.dart';
 import 'package:flutter_instagram_clone/main_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/common/widgets/custom_circle_avatar.dart';
 import '../../../../core/common/widgets/ig_follow_button.dart';
 
-class FollowSuggestionsScreen extends StatefulWidget {
+class FollowSuggestionsScreen extends ConsumerStatefulWidget {
   const FollowSuggestionsScreen({super.key});
 
   @override
-  State<FollowSuggestionsScreen> createState() =>
+  ConsumerState<FollowSuggestionsScreen> createState() =>
       _FollowSuggestionsScreenState();
 }
 
-class _FollowSuggestionsScreenState extends State<FollowSuggestionsScreen> {
-  late List<DummySuggestedUser> users;
-
-  @override
-  void initState() {
-    super.initState();
-    users = dummySuggestedUsers;
-  }
-
+class _FollowSuggestionsScreenState
+    extends ConsumerState<FollowSuggestionsScreen> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -49,9 +44,9 @@ class _FollowSuggestionsScreenState extends State<FollowSuggestionsScreen> {
             SizedBox(height: 20.h),
             Expanded(
               child: ListView.builder(
-                itemCount: users.length,
+                itemCount: dummySuggestedUsers.length,
                 itemBuilder: (context, index) {
-                  final user = users[index];
+                  final user = dummySuggestedUsers[index];
                   return ListTile(
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 24.w,
@@ -89,12 +84,12 @@ class _FollowSuggestionsScreenState extends State<FollowSuggestionsScreen> {
                       ],
                     ),
                     trailing: IgFollowButton(
-                      isFollowing: user.isFollowing,
-                      onTap: () {
-                        setState(() {
-                          user.isFollowing = !user.isFollowing;
-                        });
-                      },
+                      isFollowing: ref.watch(
+                        followProvider.select((f) => f[user.username] ?? false),
+                      ),
+                      onTap: () => ref
+                          .read(followProvider.notifier)
+                          .toggle(user.username),
                     ),
                   );
                 },

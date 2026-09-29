@@ -16,13 +16,15 @@ Backend: `threads(id, user_id, text, image_url?, likes_count, replies_count, rep
 ## Post (`post_dummy_data.dart:2`)
 
 ```
-username, name, profilePic, location?, isFollowing: bool,
+id: String (stable key for stores), username, name, profilePic, location?,
+isFollowing: bool,
 media: [{type: image|video, url, reelId?}],
 likes: int, caption: String, comments: int, reposts: int, shares: int,
 timeAgo: String, isSponsored: bool, commentsData?: [{username, profilePic, comment, likes, time}]
 ```
 
 Backend: `posts` + `post_media` + `comments`. `reelId` links a video post to `reels.id`.
+`id` was added in Phase 2 to key the reaction/comment stores; backend `posts.id` maps 1:1.
 
 ## Story (`stories_dummy_data.dart:2`)
 

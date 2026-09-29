@@ -1,7 +1,7 @@
 // Smoke test: the app boots into the splash screen and then reaches login.
 // Deeper tests (insertion math, stores, time formatting) are Phase 6 (P6-4).
 
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_instagram_clone/feature/auth/presentation/views/login_screen.dart';
@@ -10,7 +10,9 @@ import 'package:flutter_instagram_clone/main.dart';
 
 void main() {
   testWidgets('app boots from splash into login', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(
+      const ProviderScope(child: MyApp()),
+    );
 
     // splash screen shows first
     expect(find.byType(SplashScreen), findsOneWidget);

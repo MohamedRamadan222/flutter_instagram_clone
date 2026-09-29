@@ -1,9 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
 import 'package:flutter_instagram_clone/feature/message/presentation/views/chat_detail_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
@@ -17,17 +19,16 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-class ProfileContent extends StatefulWidget {
+class ProfileContent extends ConsumerStatefulWidget {
   final Map<String, dynamic> user;
   final bool isMe;
   const ProfileContent({super.key, required this.user, this.isMe = false});
 
   @override
-  State<ProfileContent> createState() => _ProfileContentState();
+  ConsumerState<ProfileContent> createState() => _ProfileContentState();
 }
 
-class _ProfileContentState extends State<ProfileContent> {
-  bool _isFollowing = false;
+class _ProfileContentState extends ConsumerState<ProfileContent> {
   int _tabIndex = 0; // 0 posts, 1 reels, 2 tagged
 
   void _onPrimaryAction() {
@@ -37,7 +38,9 @@ class _ProfileContentState extends State<ProfileContent> {
       );
       return;
     }
-    setState(() => _isFollowing = !_isFollowing);
+    ref
+        .read(followProvider.notifier)
+        .toggle(widget.user['username'] as String);
   }
 
   void _onSecondaryAction() {
@@ -109,6 +112,9 @@ class _ProfileContentState extends State<ProfileContent> {
   Widget build(BuildContext context) {
     final user = widget.user;
     final posts = DummyData.savedPosts;
+    final isFollowing = ref.watch(
+      followProvider.select((f) => f[user['username']] ?? false),
+    );
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -175,8 +181,8 @@ class _ProfileContentState extends State<ProfileContent> {
                         child: _Btn(
                           text: widget.isMe
                               ? 'Edit profile'
-                              : (_isFollowing ? 'Following' : 'Follow'),
-                          filled: !widget.isMe && !_isFollowing,
+                              : (isFollowing ? 'Following' : 'Follow'),
+                          filled: !widget.isMe && !isFollowing,
                           onTap: _onPrimaryAction,
                         ),
                       ),

@@ -22,10 +22,10 @@ Copy tick state here. Source of tasks is `02_PHASES.md`.
 
 ## Phase 2 — Local state
 
-- [ ] P2-1 state package added
-- [ ] P2-2 stores created
-- [ ] P2-3 post card migrated
-- [ ] P2-4 follow sync verified
+- [x] P2-1 state package added
+- [x] P2-2 stores created
+- [x] P2-3 post card migrated
+- [x] P2-4 follow sync verified
 
 ## Phase 3 — Create flows
 

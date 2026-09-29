@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_suggested_user.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class SuggestedUsersSection extends StatefulWidget {
+class SuggestedUsersSection extends StatelessWidget {
   const SuggestedUsersSection({super.key});
 
-  @override
-  State<SuggestedUsersSection> createState() => _SuggestedUsersSectionState();
-}
-
-class _SuggestedUsersSectionState extends State<SuggestedUsersSection> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -54,12 +51,7 @@ class _SuggestedUsersSectionState extends State<SuggestedUsersSection> {
               separatorBuilder: (_, __) => SizedBox(width: 10.w),
               itemBuilder: (context, index) {
                 final user = dummySuggestedUsers[index];
-                return _SuggestedCard(
-                  user: user,
-                  onFollow: () => setState(() {
-                    user.isFollowing = !user.isFollowing;
-                  }),
-                );
+                return _SuggestedCard(user: user);
               },
             ),
           ),
@@ -69,14 +61,16 @@ class _SuggestedUsersSectionState extends State<SuggestedUsersSection> {
   }
 }
 
-class _SuggestedCard extends StatelessWidget {
+class _SuggestedCard extends ConsumerWidget {
   final DummySuggestedUser user;
-  final VoidCallback onFollow;
 
-  const _SuggestedCard({required this.user, required this.onFollow});
+  const _SuggestedCard({required this.user});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFollowing = ref.watch(
+      followProvider.select((f) => f[user.username] ?? false),
+    );
     return Container(
       width: 150.w,
       padding: EdgeInsets.all(12.w),
@@ -110,16 +104,17 @@ class _SuggestedCard extends StatelessWidget {
             width: double.infinity,
             height: 32.h,
             child: ElevatedButton(
-              onPressed: onFollow,
+              onPressed: () =>
+                  ref.read(followProvider.notifier).toggle(user.username),
               style: ElevatedButton.styleFrom(
                 backgroundColor:
-                    user.isFollowing ? Colors.grey.shade800 : Colors.blue,
+                    isFollowing ? Colors.grey.shade800 : Colors.blue,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.r),
                 ),
               ),
               child: Text(
-                user.isFollowing ? 'Following' : 'Follow',
+                isFollowing ? 'Following' : 'Follow',
                 style: GoogleFonts.outfit(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w600,

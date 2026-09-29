@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/state/threads_likes_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
@@ -66,13 +68,17 @@ class ThreadsSection extends StatelessWidget {
   }
 }
 
-class _ThreadCard extends StatelessWidget {
+class _ThreadCard extends ConsumerWidget {
   final Map<String, dynamic> thread;
 
   const _ThreadCard({required this.thread});
 
+  String get _likeKey => '${thread['username']}|${thread['timeAgo']}';
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final liked =
+        ref.watch(threadsLikesProvider.select((s) => s.contains(_likeKey)));
     final String? image = thread['image'] as String?;
     final bool hasImage = image != null && image.isNotEmpty;
 
@@ -159,15 +165,27 @@ class _ThreadCard extends StatelessWidget {
           const Spacer(),
           Row(
             children: [
-              Icon(Icons.favorite_border, size: 18.sp, color: Colors.grey),
-              SizedBox(width: 4.w),
-              Text(
-                '${thread['likes']}',
-                style: GoogleFonts.outfit(
-                  fontSize: 12.sp,
-                  color: Colors.grey,
-                ),
+              GestureDetector(
+              onTap: () =>
+                  ref.read(threadsLikesProvider.notifier).toggle(_likeKey),
+              child: Row(
+                children: [
+                  Icon(
+                    liked ? Icons.favorite : Icons.favorite_border,
+                    size: 18.sp,
+                    color: liked ? Colors.red : Colors.grey,
+                  ),
+                  SizedBox(width: 4.w),
+                  Text(
+                    '${thread['likes'] + (liked ? 1 : 0)}',
+                    style: GoogleFonts.outfit(
+                      fontSize: 12.sp,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
               ),
+            ),
               SizedBox(width: 12.w),
               Image.asset(
                 'assets/icons/comment.png',

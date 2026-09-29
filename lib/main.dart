@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/theme/app_theme.dart';
 import 'package:flutter_instagram_clone/feature/auth/presentation/views/splash_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {

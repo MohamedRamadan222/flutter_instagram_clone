@@ -1,6 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/state/comments_store.dart';
+import 'package:flutter_instagram_clone/core/state/follow_store.dart';
+import 'package:flutter_instagram_clone/core/state/post_reactions_store.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
 import 'package:flutter_instagram_clone/feature/comments/presentation/views/comments_screen.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/post_options_bottom_sheet.dart';
@@ -8,6 +11,7 @@ import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/post_v
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/save_to_collection_bottom_sheet.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/share_post_bottom_sheet.dart';
 import 'package:flutter_instagram_clone/feature/reels/presentation/views/reels_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
@@ -16,73 +20,43 @@ import '../../../../core/utils/app_bottom_sheet.dart';
 import '../../../../core/utils/reel_dummy_data.dart';
 import '../../../profile/presentation/views/user_profile_screen.dart';
 
-class PostCard extends StatefulWidget {
+class PostCard extends ConsumerStatefulWidget {
   final Map<String, dynamic> snap;
   final bool isMyPost;
 
   const PostCard({super.key, required this.snap, required this.isMyPost});
 
   @override
-  State<PostCard> createState() => _PostCardState();
+  ConsumerState<PostCard> createState() => _PostCardState();
 }
 
-class _PostCardState extends State<PostCard> {
-  bool _isLiked = false;
+class _PostCardState extends ConsumerState<PostCard> {
   bool _showHeart = false;
-  int _likesCount = 0;
-  int _commentsCount = 0;
-  int _repostsCount = 0;
-  int _sharesCount = 0;
-  late bool _isFollowingPostUser;
-
-  final bool _isBookMarked = false;
-  bool _isReposted = false;
-
   bool _isExpanded = false;
   static const int _maxLine = 1;
+
+  String get _postId => widget.snap['id'] as String;
 
   @override
   void initState() {
     super.initState();
-    _likesCount = widget.snap['likes'];
-    _commentsCount = widget.snap['comments'] ?? 0;
-    _repostsCount = widget.snap['reposts'] ?? 0;
-    _sharesCount = widget.snap['shares'] ?? 0;
-    _isFollowingPostUser = widget.snap['isFollowing'] ?? false;
   }
 
-  void _handeDoubleTap() {
-    if (!_isLiked) {
-      _handleLike();
+  void _handleDoubleTap() {
+    final reactions = ref.read(postReactionsProvider)[_postId]!;
+    if (!reactions.liked) {
+      ref.read(postReactionsProvider.notifier).toggleLike(_postId);
     }
     setState(() {
       _showHeart = true;
     });
 
-    Future.delayed(Duration(milliseconds: 700), () {
+    Future.delayed(const Duration(milliseconds: 700), () {
       if (mounted) {
         setState(() {
           _showHeart = false;
         });
       }
-    });
-  }
-
-  void _handleLike() {
-    setState(() {
-      if (!_isLiked) {
-        _likesCount++;
-      } else {
-        _likesCount--;
-      }
-      _isLiked = !_isLiked;
-    });
-  }
-
-  void _handelRepost() {
-    setState(() {
-      _isReposted = !_isReposted;
-      _isReposted ? _repostsCount++ : _repostsCount--;
     });
   }
 
@@ -99,6 +73,13 @@ class _PostCardState extends State<PostCard> {
   Widget build(BuildContext context) {
     final user = DummyData.currentUser;
     final caption = widget.snap['caption'] ?? '';
+    final reactions =
+        ref.watch(postReactionsProvider.select((m) => m[_postId]))!;
+    final commentsCount =
+        ref.watch(commentsProvider.select((m) => m[_postId]?.length ?? 0));
+    final isFollowingUser = ref.watch(
+      followProvider.select((f) => f[widget.snap['username']] ?? false),
+    );
     return Container(
       color: Colors.black,
       padding: EdgeInsets.symmetric(vertical: 0).copyWith(bottom: 10),
@@ -180,11 +161,9 @@ class _PostCardState extends State<PostCard> {
                         SizedBox(
                           height: 30.h,
                           child: ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _isFollowingPostUser = !_isFollowingPostUser;
-                              });
-                            },
+                            onPressed: () => ref
+                                .read(followProvider.notifier)
+                                .toggle(widget.snap['username']),
                             style: ElevatedButton.styleFrom(
                               padding: EdgeInsets.symmetric(horizontal: 10),
                               backgroundColor: Colors.grey.shade900,
@@ -193,7 +172,7 @@ class _PostCardState extends State<PostCard> {
                               ),
                             ),
                             child: Text(
-                              _isFollowingPostUser ? 'Following' : 'Follow',
+                              isFollowingUser ? 'Following' : 'Follow',
                               style: GoogleFonts.outfit(
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
@@ -257,7 +236,7 @@ class _PostCardState extends State<PostCard> {
               child: Stack(
                 children: [
                   GestureDetector(
-                    onDoubleTap: _handeDoubleTap,
+                    onDoubleTap: _handleDoubleTap,
                     child: PageView.builder(
                       controller: _pageController,
                       itemCount: (widget.snap['media'] as List).length,
@@ -347,7 +326,7 @@ class _PostCardState extends State<PostCard> {
                     ),
 
                   // repost avatar overlay
-                  if (_isReposted)
+                  if (reactions.reposted)
                     Positioned(
                       bottom: 8,
                       left: 12,
@@ -396,17 +375,21 @@ class _PostCardState extends State<PostCard> {
               Row(
                 children: [
                   IconButton(
-                    onPressed: _handleLike,
+                    onPressed: () => ref
+                        .read(postReactionsProvider.notifier)
+                        .toggleLike(_postId),
                     icon: Icon(
-                      _isLiked ? Icons.favorite : Icons.favorite_border,
-                      color: _isLiked ? Colors.red : Colors.white,
+                      reactions.liked
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: reactions.liked ? Colors.red : Colors.white,
                       size: 28,
                     ),
                   ),
 
-                  if (_likesCount > 0)
+                  if (reactions.likes > 0)
                     Text(
-                      '$_likesCount',
+                      '${reactions.likes}',
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         color: Colors.white,
@@ -431,9 +414,9 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ),
 
-                  if (_commentsCount > 0)
+                  if (commentsCount > 0)
                     Text(
-                      '$_commentsCount',
+                      '$commentsCount',
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         color: Colors.white,
@@ -444,12 +427,14 @@ class _PostCardState extends State<PostCard> {
               Row(
                 children: [
                   IconButton(
-                    onPressed: _handelRepost,
+                    onPressed: () => ref
+                        .read(postReactionsProvider.notifier)
+                        .toggleRepost(_postId),
                     icon: Stack(
                       alignment: Alignment.center,
                       children: [
                         Icon(Icons.loop, color: Colors.white, size: 26),
-                        if (_isReposted)
+                        if (reactions.reposted)
                           const Positioned(
                             right: 0,
                             bottom: 2,
@@ -458,9 +443,9 @@ class _PostCardState extends State<PostCard> {
                       ],
                     ),
                   ),
-                  if (_repostsCount > 0)
+                  if (reactions.reposts > 0)
                     Text(
-                      '$_repostsCount',
+                      '${reactions.reposts}',
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         color: Colors.white,
@@ -473,9 +458,9 @@ class _PostCardState extends State<PostCard> {
                   IconButton(
                     onPressed: () {
                       // show share post bottomSheet
-                      setState(() {
-                        _sharesCount++;
-                      });
+                      ref
+                          .read(postReactionsProvider.notifier)
+                          .addShare(_postId);
                       showModalBottomSheet(
                         context: context,
                         isScrollControlled: true,
@@ -496,9 +481,9 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ),
 
-                  if (_sharesCount > 0)
+                  if (reactions.shares > 0)
                     Text(
-                      '$_sharesCount',
+                      '${reactions.shares}',
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         color: Colors.white,
@@ -509,7 +494,10 @@ class _PostCardState extends State<PostCard> {
               Spacer(),
               IconButton(
                 onPressed: () {
-                  // save to collection bottomSheet
+                  // toggle save + pick a collection
+                  ref
+                      .read(postReactionsProvider.notifier)
+                      .toggleSave(_postId);
                   showModalBottomSheet(
                     context: context,
                     backgroundColor: Colors.black,
@@ -525,8 +513,8 @@ class _PostCardState extends State<PostCard> {
                   );
                 },
                 icon: Icon(
-                  _isBookMarked
-                      ? Icons.bookmark_outline
+                  reactions.saved
+                      ? Icons.bookmark
                       : Icons.bookmark_border,
                   color: Colors.white,
                   size: 28,
@@ -542,7 +530,7 @@ class _PostCardState extends State<PostCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$_likesCount likes',
+                  '${reactions.likes} likes',
                   style: GoogleFonts.outfit(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -608,7 +596,7 @@ class _PostCardState extends State<PostCard> {
                   },
                 ),
 
-                if (widget.snap['comments'] > 0)
+                if (commentsCount > 0)
                   GestureDetector(
                     onTap: () {
                       // show comments bottomSheet
@@ -620,7 +608,7 @@ class _PostCardState extends State<PostCard> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Text(
-                        'View all ${widget.snap['comments']} comments',
+                        'View all $commentsCount comments',
                         style: GoogleFonts.outfit(
                           fontSize: 13,
                           color: Colors.grey,
