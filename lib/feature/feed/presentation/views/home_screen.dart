@@ -1,6 +1,10 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/utils/post_dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/stories_dummy_data.dart';
+import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/suggested_users_section.dart';
+import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/threads_section.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -14,9 +18,26 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with AutomaticKeepAliveClientMixin {
+  final Random _random = Random();
+
   // scroll controller to preserve position
   late final ScrollController _scrollController;
+
+  // random indices for special section (start from 1 to avoid first item)
+  late final int suggestedIndex =
+      1 + _random.nextInt(PostDummyData.posts.length - 1);
+
+  late final int threadsIndex = _generateThreadsIndex();
+
+  int _generateThreadsIndex() {
+    int index;
+    do {
+      index = 1 + _random.nextInt(PostDummyData.posts.length);
+    } while (index == suggestedIndex);
+    return index;
+  }
 
   @override
   void initState() {
@@ -72,7 +93,24 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
-              return PostCard(snap: PostDummyData.posts[index], isMyPost: true);
+              // insert suggested users section randomly
+              if (index == suggestedIndex) {
+                return SuggestedUsersSection();
+              }
+              // insert threads section randomly
+              if (index == threadsIndex) {
+                return ThreadsSection();
+              }
+              // adjust post index for inserted sections
+              int numInsertedBefore = 0;
+              if (index > suggestedIndex) numInsertedBefore++;
+              if (index > threadsIndex) numInsertedBefore++;
+
+              final postIndex = index - numInsertedBefore;
+              return PostCard(
+                snap: PostDummyData.posts[postIndex],
+                isMyPost: false,
+              );
             }, childCount: PostDummyData.posts.length),
           ),
         ],
