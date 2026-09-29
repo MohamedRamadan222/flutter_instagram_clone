@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/ig_button.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/section_title.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
-import 'package:flutter_instagram_clone/feature/auth/presentation/views/birthday_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class PasswordScreen extends StatefulWidget {
@@ -133,15 +133,8 @@ class _PasswordScreenState extends State<PasswordScreen> {
               child: IGButton(
                 text: 'Next',
                 onPressed: () {
-                  // Navigate to birthday screen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) {
-                        return BirthdayScreen();
-                      },
-                    ),
-                  );
+                  // Navigate to birthday step
+                  context.push('/signup/birthday');
                 },
               ),
             ),

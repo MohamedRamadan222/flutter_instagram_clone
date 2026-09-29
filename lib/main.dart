@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_instagram_clone/core/router/app_router.dart';
 import 'package:flutter_instagram_clone/core/theme/app_theme.dart';
-import 'package:flutter_instagram_clone/feature/auth/presentation/views/splash_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -8,21 +8,21 @@ void main() {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ScreenUtilInit(
-      designSize: Size(375, 812),
+      designSize: const Size(375, 812),
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return MaterialApp(
+        return MaterialApp.router(
           title: 'Instagram Clone',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
-          home: SplashScreen(),
+          routerConfig: ref.watch(routerProvider),
         );
       },
     );

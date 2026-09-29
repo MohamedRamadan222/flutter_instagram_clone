@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/ig_button.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/section_title.dart';
+import 'package:flutter_instagram_clone/core/state/auth_store.dart';
 import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_suggested_user.dart';
-import 'package:flutter_instagram_clone/main_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/common/widgets/custom_circle_avatar.dart';
@@ -107,15 +108,9 @@ class _FollowSuggestionsScreenState
                 child: IGButton(
                   text: 'Next',
                   onPressed: () {
-                    // Navigate to main screen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return MainScreen();
-                        },
-                      ),
-                    );
+                    // Signup finished: open a session and enter the app (P4-1)
+                    ref.read(authProvider.notifier).login();
+                    context.go('/main');
                   },
                 ),
               ),

@@ -7,20 +7,17 @@ import 'package:flutter_instagram_clone/core/state/comments_store.dart';
 import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/state/post_reactions_store.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
-import 'package:flutter_instagram_clone/feature/comments/presentation/views/comments_screen.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/post_options_bottom_sheet.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/post_video_player.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/save_to_collection_bottom_sheet.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/share_post_bottom_sheet.dart';
-import 'package:flutter_instagram_clone/feature/reels/presentation/views/reels_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../../../../core/utils/app_bottom_sheet.dart';
 import '../../../../core/utils/reel_dummy_data.dart';
-import '../../../profile/presentation/views/user_profile_screen.dart';
 
 class PostCard extends ConsumerStatefulWidget {
   final Map<String, dynamic> snap;
@@ -93,24 +90,8 @@ class _PostCardState extends ConsumerState<PostCard> {
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
             child: GestureDetector(
               onTap: () {
-                // Nav to profile screen
-                final user = {
-                  'username': widget.snap['username'],
-                  'profilePic': widget.snap['profilePic'],
-                  'name': widget.snap['name'],
-                  'bio': widget.snap['bio'] ?? 'Goal Setting',
-                  'followers': 40303,
-                  'following': 3020,
-                  'posts': 9,
-                };
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return UserProfileScreen(user: user);
-                    },
-                  ),
-                );
+                // Nav to profile screen (P4-2 deep link)
+                context.push('/user/${widget.snap['username']}');
               },
               child: Row(
                 children: [
@@ -224,12 +205,7 @@ class _PostCardState extends ConsumerState<PostCard> {
                 );
 
                 if (index != -1) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ReelsScreen(initialIndex: index),
-                    ),
-                  );
+                  context.push('/reels?index=$index');
                 }
               }
             },
@@ -412,11 +388,8 @@ class _PostCardState extends ConsumerState<PostCard> {
                 children: [
                   IconButton(
                     onPressed: () {
-                      // show comment bottomSheet
-                      showAppBottomSheet(
-                        context: context,
-                        child: CommentsScreen(post: widget.snap),
-                      );
+                      // open comments page (P4-2)
+                      context.push('/comments/${widget.snap['id']}');
                     },
                     icon: Image.asset(
                       'assets/icons/comment.png',
@@ -610,11 +583,8 @@ class _PostCardState extends ConsumerState<PostCard> {
                 if (commentsCount > 0)
                   GestureDetector(
                     onTap: () {
-                      // show comments bottomSheet
-                      showAppBottomSheet(
-                        context: context,
-                        child: CommentsScreen(post: widget.snap),
-                      );
+                      // open comments page (P4-2)
+                      context.push('/comments/${widget.snap['id']}');
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),

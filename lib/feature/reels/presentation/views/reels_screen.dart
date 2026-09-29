@@ -3,13 +3,12 @@ import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar
 import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/state/reels_likes_store.dart';
 import 'package:flutter_instagram_clone/core/state/reels_store.dart';
-import 'package:flutter_instagram_clone/core/utils/app_bottom_sheet.dart';
-import 'package:flutter_instagram_clone/feature/comments/presentation/views/comments_screen.dart';
 import 'package:flutter_instagram_clone/feature/create/presentation/views/create_reel_screen.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/post_video_player.dart';
 import 'package:flutter_instagram_clone/feature/feed/presentation/widgets/share_post_bottom_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ReelsScreen extends ConsumerStatefulWidget {
@@ -73,12 +72,7 @@ class _ReelPage extends ConsumerWidget {
   const _ReelPage({required this.reel});
 
   void _openComments(BuildContext context) {
-    showAppBottomSheet(
-      context: context,
-      child: CommentsScreen(
-        post: {'id': reel['id'], 'commentsData': []},
-      ),
-    );
+    context.push('/comments/${reel['id']}');
   }
 
   void _shareReel(BuildContext context) {

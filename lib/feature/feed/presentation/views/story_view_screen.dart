@@ -4,30 +4,30 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/state/stories_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 
 /// Full-screen story viewer: one [PageView] page per story image across all
 /// users, auto-advancing with a per-story progress bar. Tap left/right to
-/// navigate, tap the close button to leave.
-class StoryViewScreen extends StatefulWidget {
-  final List<Map<String, dynamic>> stories;
-  final int initialIndex;
+/// navigate, tap the close button to leave. Reached via the `/story` route
+/// (P4-2); the strip data comes from [storiesProvider].
+class StoryViewScreen extends ConsumerStatefulWidget {
+  /// Username whose stories the viewer should open on (first story).
+  final String? initialUser;
 
-  const StoryViewScreen({
-    super.key,
-    required this.stories,
-    this.initialIndex = 0,
-  });
+  const StoryViewScreen({super.key, this.initialUser});
 
   @override
-  State<StoryViewScreen> createState() => _StoryViewScreenState();
+  ConsumerState<StoryViewScreen> createState() => _StoryViewScreenState();
 }
 
-class _StoryViewScreenState extends State<StoryViewScreen> {
+class _StoryViewScreenState extends ConsumerState<StoryViewScreen> {
   late final PageController _pageController;
+  late final List<Map<String, dynamic>> _stories;
   late final List<_StoryPage> _pages;
   int _page = 0;
   Timer? _timer;
@@ -36,8 +36,12 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   @override
   void initState() {
     super.initState();
-    _pages = _flatten(widget.stories);
-    _page = _startPageForUser(widget.initialIndex);
+    _stories = ref.read(storiesProvider);
+    _pages = _flatten(_stories);
+    final userIndex = _stories.indexWhere(
+      (s) => s['username'] == widget.initialUser,
+    );
+    _page = _startPageForUser(userIndex < 0 ? 0 : userIndex);
     _pageController = PageController(initialPage: _page);
     _startTimer();
   }
@@ -67,8 +71,8 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
   int _startPageForUser(int userIndex) {
     if (_pages.isEmpty) return 0;
     var page = 0;
-    for (var u = 0; u < userIndex && u < widget.stories.length; u++) {
-      page += (widget.stories[u]['stories'] as List).length;
+    for (var u = 0; u < userIndex && u < _stories.length; u++) {
+      page += (_stories[u]['stories'] as List).length;
     }
     return page.clamp(0, _pages.length - 1);
   }

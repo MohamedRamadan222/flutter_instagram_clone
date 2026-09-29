@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
-import 'package:flutter_instagram_clone/core/state/stories_store.dart';
-import 'package:flutter_instagram_clone/feature/feed/presentation/views/story_view_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class StoryCircle extends ConsumerWidget {
@@ -37,19 +36,8 @@ class StoryCircle extends ConsumerWidget {
           onAddStory?.call();
           return;
         }
-        final allStories = ref.read(storiesProvider);
-        final idx = allStories.indexWhere(
-          (s) => s['username'] == story['username'],
-        );
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => StoryViewScreen(
-              stories: allStories,
-              initialIndex: idx < 0 ? 0 : idx,
-            ),
-          ),
-        );
+        // P4-2: the viewer is a routed screen keyed by username
+        await context.push('/story?user=${story['username']}');
         // mark as seen once the viewer is closed (P1-7)
         onViewed?.call();
       },
@@ -130,13 +118,16 @@ class StoryCircle extends ConsumerWidget {
               ],
             ),
             SizedBox(height: 5.h),
-            Text(
-              isUsernameYourStory ? 'Your story' : story['username'],
-              style: GoogleFonts.outfit(
-                fontSize: 12.sp,
-                color: isUsernameYourStory ? Colors.grey : Colors.white,
+            Expanded(
+              child: Text(
+                isUsernameYourStory ? 'Your story' : story['username'],
+                style: GoogleFonts.outfit(
+                  fontSize: 12.sp,
+                  color: isUsernameYourStory ? Colors.grey : Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

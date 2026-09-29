@@ -10,7 +10,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 class CommentsScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> post;
-  const CommentsScreen({super.key, required this.post});
+
+  /// When true the sheet chrome (drag handle, fixed 75% height) is omitted
+  /// and the sheet fills the page — used by the `/comments/:postId` route
+  /// (P4-2). The bottom-sheet usage keeps the default.
+  final bool asPage;
+
+  const CommentsScreen({super.key, required this.post, this.asPage = false});
 
   @override
   ConsumerState<CommentsScreen> createState() => _CommentsScreenState();
@@ -39,22 +45,26 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
         ref.watch(postReactionsProvider.select((m) => m[_postId]));
     return Container(
       color: Colors.black,
-      height: MediaQuery.of(context).size.height * 0.75,
+      height: widget.asPage
+          ? null
+          : MediaQuery.of(context).size.height * 0.75,
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Column(
         children: [
-          SizedBox(height: 8.h),
-          Container(
-            width: 40.w,
-            height: 4.h,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade700,
-              borderRadius: BorderRadius.circular(2.r),
+          if (!widget.asPage) ...[
+            SizedBox(height: 8.h),
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade700,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
             ),
-          ),
-          SizedBox(height: 10.h),
+            SizedBox(height: 10.h),
+          ],
           Text(
             'Comments (${comments.length})',
             style: GoogleFonts.outfit(

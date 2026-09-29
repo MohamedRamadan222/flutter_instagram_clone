@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/section_title.dart';
-import 'package:flutter_instagram_clone/feature/auth/presentation/views/terms_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/common/widgets/ig_button.dart';
@@ -59,13 +59,8 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
               child: IGButton(
                 text: 'Next',
                 onPressed: () {
-                  // Navigate to terms screen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TermsScreen(),
-                    ),
-                  );
+                  // Navigate to terms step
+                  context.push('/signup/terms');
                 },
               ),
             ),

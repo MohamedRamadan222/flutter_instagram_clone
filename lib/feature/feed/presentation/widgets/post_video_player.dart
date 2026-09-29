@@ -14,35 +14,53 @@ class PostVideoPlayer extends StatefulWidget {
 }
 
 class _PostVideoPlayerState extends State<PostVideoPlayer> {
-  late VideoPlayerController controller;
+  VideoPlayerController? _controller;
   bool _isInit = false;
+  bool _failed = false;
   bool _isMuted = true;
 
   @override
   void initState() {
     super.initState();
-    // Phase 3: locally picked reels/videos arrive as file paths, remote ones
-    // as http(s) URLs.
-    final isRemote = widget.videoUrl.startsWith('http');
-    controller = isRemote
-        ? VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
-        : VideoPlayerController.file(File(widget.videoUrl))
-      ..initialize().then((_) {
-        setState(() {
-          _isInit = true;
-        });
-        controller.setLooping(true);
-        controller.setVolume(0);
+    _createController();
+  }
+
+  Future<void> _createController() async {
+    try {
+      // Phase 3: locally picked reels/videos arrive as file paths, remote ones
+      // as http(s) URLs.
+      final isRemote = widget.videoUrl.startsWith('http');
+      final controller = isRemote
+          ? VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+          : VideoPlayerController.file(File(widget.videoUrl));
+      await controller.initialize();
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
+      setState(() {
+        _controller = controller;
+        _isInit = true;
       });
+      controller.setLooping(true);
+      controller.setVolume(0);
+    } catch (_) {
+      // No platform backend (e.g. Linux desktop) or a bad URL: show a
+      // placeholder instead of crashing the widget tree.
+      if (!mounted) return;
+      setState(() => _failed = true);
+    }
   }
 
   @override
   void dispose() {
-    controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   void _toggleMute() {
+    final controller = _controller;
+    if (controller == null) return;
     setState(() {
       _isMuted = !_isMuted;
       controller.setVolume(_isMuted ? 0 : 1);
@@ -50,7 +68,8 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
   }
 
   void _playPause(bool visible) {
-    if (!_isInit) return;
+    final controller = _controller;
+    if (!_isInit || controller == null) return;
     if (visible) {
       controller.play();
     } else {
@@ -60,12 +79,20 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
+    if (_failed) {
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: Icon(Icons.ondemand_video, color: Colors.white54, size: 40),
+        ),
+      );
+    }
     return VisibilityDetector(
       key: Key(widget.videoUrl),
       onVisibilityChanged: (info) {
         final visiblePercentage = info.visibleFraction * 100;
 
-        // play only if al least 70% only
+        // play only if at least 70% visible
         if (visiblePercentage > 70) {
           _playPause(true);
         } else {
@@ -79,9 +106,9 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
                   child: FittedBox(
                     fit: BoxFit.cover,
                     child: SizedBox(
-                      width: controller.value.size.width,
-                      height: controller.value.size.height,
-                      child: VideoPlayer(controller),
+                      width: _controller!.value.size.width,
+                      height: _controller!.value.size.height,
+                      child: VideoPlayer(_controller!),
                     ),
                   ),
                 ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_instagram_clone/feature/auth/presentation/views/add_profile_picture_screen.dart';
 import 'package:flutter_instagram_clone/feature/auth/presentation/widgets/already_have_an_account_section.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/common/widgets/ig_button.dart';
@@ -68,13 +68,8 @@ class TermsScreen extends StatelessWidget {
                 child: IGButton(
                   text: 'I agree',
                   onPressed: () {
-                    // Navigate to add profile picture screen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AddProfilePictureScreen(),
-                      ),
-                    );
+                    // Navigate to add profile picture step
+                    context.push('/signup/profile-picture');
                   },
                 ),
               ),

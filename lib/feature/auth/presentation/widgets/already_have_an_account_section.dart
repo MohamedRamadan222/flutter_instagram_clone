@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
-import 'package:flutter_instagram_clone/feature/auth/presentation/views/login_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AlreadyHaveAnAccountSection extends StatelessWidget {
@@ -12,10 +12,7 @@ class AlreadyHaveAnAccountSection extends StatelessWidget {
     return Center(
       child: TextButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-          );
+          context.push('/login');
         },
         child: Text(
           'I already have an account',

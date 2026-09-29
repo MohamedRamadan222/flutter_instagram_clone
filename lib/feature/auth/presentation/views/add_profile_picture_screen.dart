@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/ig_button.dart';
-import 'package:flutter_instagram_clone/feature/auth/presentation/views/follow_suggestions_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AddProfilePictureScreen extends StatelessWidget {
@@ -75,15 +75,8 @@ class AddProfilePictureScreen extends StatelessWidget {
                     foregroundColor: Colors.white,
                   ),
                   onPressed: () {
-                    // Navigator to follow suggestions screen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return FollowSuggestionsScreen();
-                        },
-                      ),
-                    );
+                    // Navigate to follow suggestions step
+                    context.push('/signup/follow-suggestions');
                   },
                   child: Text(
                     'Skip',

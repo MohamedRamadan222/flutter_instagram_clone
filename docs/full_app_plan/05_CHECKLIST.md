@@ -37,9 +37,9 @@ Copy tick state here. Source of tasks is `02_PHASES.md`.
 
 ## Phase 4 — Auth + nav
 
-- [ ] P4-1 splash→auth→main + logout
-- [ ] P4-2 router
-- [ ] P4-3 session persisted
+- [x] P4-1 splash→auth→main + logout (profile app bar)
+- [x] P4-2 router (go_router: /splash /login /signup/* /main /user/:id /reels /comments /story)
+- [x] P4-3 session persisted (shared_preferences + auth store)
 
 ## Phase 5 — Backend
 

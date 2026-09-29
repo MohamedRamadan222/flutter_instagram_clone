@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_instagram_clone/core/state/auth_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
-import 'package:flutter_instagram_clone/feature/auth/presentation/views/signup_screen.dart';
-import 'package:flutter_instagram_clone/main_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/common/widgets/ig_button.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends State<LoginScreen> {
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -38,16 +34,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: IGButton(
                       text: 'Login',
                       onPressed: () {
-                        // Navigate to Main Screen
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) {
-                              return MainScreen();
-                            },
-                          ),
-                        );
-                       },
+                        // dummy auth: any credentials open a session (P4-1)
+                        ref.read(authProvider.notifier).login();
+                        context.go('/main');
+                      },
                     ),
                   ),
                 ],
@@ -75,14 +65,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 onPressed: () {
-                  // Navigate to sign up screen
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) {
-                        return SignupScreen();
-                      },
-                    ),
-                  );
+                  // Navigate to sign up flow
+                  context.push('/signup');
                 },
                 child: Text(
                   'Create new account',
