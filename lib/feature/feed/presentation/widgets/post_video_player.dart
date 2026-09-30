@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_instagram_clone/core/utils/autoplay_policy.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -8,23 +9,36 @@ class PostVideoPlayer extends StatefulWidget {
   final String videoUrl;
   final String? playerId;
 
-  const PostVideoPlayer({super.key, required this.videoUrl, this.playerId});
+  /// P6-3: feed and reels both autoplay muted; exposed so tests / callers
+  /// can opt out without forking the widget.
+  final bool autoplay;
+  final bool startMuted;
+
+  const PostVideoPlayer({
+    super.key,
+    required this.videoUrl,
+    this.playerId,
+    this.autoplay = true,
+    this.startMuted = AutoplayPolicy.defaultMuted,
+  });
 
   @override
   State<PostVideoPlayer> createState() => _PostVideoPlayerState();
 }
 
-class _PostVideoPlayerState extends State<PostVideoPlayer> {
+class _PostVideoPlayerState extends State<PostVideoPlayer>
+    with WidgetsBindingObserver {
   VideoPlayerController? _controller;
   bool _isInit = false;
   bool _failed = false;
-  bool _isMuted = true;
+  late bool _isMuted = widget.startMuted;
   bool _initializing = false;
   bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // P6-2: defer controller creation until first visible frame so
     // off-screen feed videos don't all initialize/decode at once.
     if (widget.videoUrl.isEmpty) {
@@ -42,7 +56,19 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
       _failed = widget.videoUrl.isEmpty;
       _initializing = false;
       _initialized = false;
+      _isMuted = widget.startMuted;
       // Re-init lazily on next visible frame (handled in onVisibilityChanged).
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // P6-3: backgrounding the app pauses every player (tab switch is
+    // covered by VisibilityDetector reporting fraction 0).
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      _controller?.pause();
     }
   }
 
@@ -72,7 +98,7 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
         _isInit = true;
       });
       controller.setLooping(true);
-      controller.setVolume(0);
+      controller.setVolume(widget.startMuted ? 0 : 1);
     } catch (_) {
       // No platform backend (e.g. Linux desktop) or a bad URL: show a
       // placeholder instead of crashing the widget tree.
@@ -83,6 +109,7 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     super.dispose();
   }
@@ -99,6 +126,10 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
   void _playPause(bool visible) {
     final controller = _controller;
     if (!_isInit || controller == null) return;
+    if (!widget.autoplay) {
+      controller.pause();
+      return;
+    }
     if (visible) {
       controller.play();
     } else {
@@ -110,13 +141,14 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
   Widget build(BuildContext context) {
     // P6-2: keep the VisibilityDetector mounted even before init so the
     // first visible frame triggers lazy init; paused otherwise.
+    // P6-3: threshold comes from [AutoplayPolicy].
     return VisibilityDetector(
       key: ValueKey(
         'video_${widget.playerId ?? widget.videoUrl}_${identityHashCode(this)}',
       ),
       onVisibilityChanged: (info) {
-        const threshold = 0.5;
-        final visible = info.visibleFraction > threshold;
+        final visible =
+            info.visibleFraction > AutoplayPolicy.visibilityThreshold;
         if (visible && !_initialized && !_failed) {
           _createController().then((_) {
             if (mounted) _playPause(true);

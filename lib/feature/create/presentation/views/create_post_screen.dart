@@ -5,6 +5,7 @@ import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar
 import 'package:flutter_instagram_clone/core/state/feed_posts_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
+import 'package:flutter_instagram_clone/core/utils/media_permissions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -26,6 +27,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   List<XFile> _images = [];
 
   Future<void> _pickImages() async {
+    // P6-3: explain + offer Settings when photo access is denied.
+    if (!await ensureMediaPermission(context, MediaKind.photo)) return;
     final picked = await _picker.pickMultiImage(imageQuality: 85);
     if (picked.isEmpty || !mounted) return;
     setState(() => _images = picked);

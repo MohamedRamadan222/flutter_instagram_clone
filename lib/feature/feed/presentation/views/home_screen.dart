@@ -8,6 +8,7 @@ import 'package:flutter_instagram_clone/core/state/feed_posts_store.dart';
 import 'package:flutter_instagram_clone/core/state/reels_store.dart';
 import 'package:flutter_instagram_clone/core/state/stories_store.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
+import 'package:flutter_instagram_clone/core/utils/media_permissions.dart';
 import 'package:flutter_instagram_clone/core/utils/post_dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/threads_dummy_data.dart';
 import 'package:flutter_instagram_clone/feature/create/presentation/views/create_post_screen.dart';
@@ -117,6 +118,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   /// P3-3: pick a photo from the gallery and publish it as a story.
   Future<void> _publishStory() async {
+    // P6-3: explain + offer Settings when photo access is denied.
+    if (!await ensureMediaPermission(context, MediaKind.photo)) return;
     final picked = await _picker.pickImage(source: ImageSource.gallery);
     if (picked == null || !mounted) return;
     ref.read(storiesProvider.notifier).publishStory(picked.path);

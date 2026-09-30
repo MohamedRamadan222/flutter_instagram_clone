@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/state/reels_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
+import 'package:flutter_instagram_clone/core/utils/media_permissions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,6 +28,8 @@ class _CreateReelScreenState extends ConsumerState<CreateReelScreen> {
   Uint8List? _thumbData;
 
   Future<void> _pickVideo() async {
+    // P6-3: explain + offer Settings when video access is denied.
+    if (!await ensureMediaPermission(context, MediaKind.video)) return;
     final picked = await _picker.pickVideo(source: ImageSource.gallery);
     if (picked == null || !mounted) return;
     setState(() {
