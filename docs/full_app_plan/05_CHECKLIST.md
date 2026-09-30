@@ -60,6 +60,6 @@ Copy tick state here. Source of tasks is `02_PHASES.md`.
 ## Phase 7 — Release
 
 - [x] P7-1 icon/splash/version
-- [ ] P7-2 signing + perms
+- [x] P7-2 signing + perms
 - [ ] P7-3 crashlytics + analytics
 - [ ] P7-4 closed test → production

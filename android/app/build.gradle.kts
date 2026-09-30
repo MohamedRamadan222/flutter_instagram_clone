@@ -32,8 +32,14 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // P7-2: closed test uses debug keys so `flutter run --release`
+            // works. Production signing is a human step (keystore secrets
+            // must never enter the repo):
+            // 1. keytool -genkey -v -keystore ~/instaclone-release.jks ...
+            // 2. create android/key.properties (storeFile/storePassword/
+            //    keyAlias/keyPassword) — already gitignored.
+            // 3. replace the line below with the `signingConfigs { release }`
+            //    block from https://docs.flutter.dev/deployment/android.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
