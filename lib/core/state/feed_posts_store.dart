@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_instagram_clone/core/config/app_config.dart';
 import 'package:flutter_instagram_clone/core/data/backend_data_source.dart';
 import 'package:flutter_instagram_clone/core/state/post_reactions_store.dart';
+import 'package:flutter_instagram_clone/core/utils/analytics_service.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/post_dummy_data.dart';
 
@@ -103,6 +104,12 @@ class FeedPostsStore extends Notifier<List<Map<String, dynamic>>> {
     state = [resolved, ...state];
     // Give the new post reaction state so like/save/repost work on its card.
     ref.read(postReactionsProvider.notifier).seedPost(resolved);
+    // P7-3: best-effort analytics; never blocks the share.
+    analytics.log(
+      AnalyticsEvent.post,
+      userId: _me,
+      payload: {'postId': id},
+    );
   }
 }
 

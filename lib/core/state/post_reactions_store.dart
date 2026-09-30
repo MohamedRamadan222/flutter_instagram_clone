@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_instagram_clone/core/data/backend_data_source.dart';
+import 'package:flutter_instagram_clone/core/utils/analytics_service.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/post_dummy_data.dart';
 
@@ -101,6 +102,12 @@ class PostReactionsStore
         likes: max(0, r.likes + (r.liked ? -1 : 1)),
       ),
     };
+    // P7-3: best-effort analytics; never blocks the toggle.
+    analytics.log(
+      AnalyticsEvent.like,
+      userId: DummyData.currentUser['username'] as String?,
+      payload: {'postId': postId, 'liked': !r.liked},
+    );
     // Phase 5: persist when a backend is configured (best-effort).
     ref.read(backendDataSourceProvider).togglePostLike(
           postId: postId,

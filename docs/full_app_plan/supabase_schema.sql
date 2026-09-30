@@ -258,3 +258,27 @@ alter publication supabase_realtime add table post_likes;
 alter publication supabase_realtime add table saves;
 alter publication supabase_realtime add table messages;
 alter publication supabase_realtime add table notifications;
+
+-- ---------------------------------------------------------------------------
+-- P7-3 analytics: Supabase event log for app_open/like/post/follow.
+-- Written best-effort by AnalyticsService; never blocks UI. Additive only.
+-- ---------------------------------------------------------------------------
+
+create table analytics_events (
+  id          uuid primary key default gen_random_uuid(),
+  created_at  timestamptz not null default now(),
+  user_id     text,
+  event       text not null check (event in ('app_open', 'like', 'post', 'follow')),
+  payload     jsonb not null default '{}'
+);
+
+create index analytics_events_created_idx on analytics_events (created_at desc);
+
+alter table analytics_events enable row level security;
+
+-- Insert/select policies following the file's demo convention (open to `anon`).
+create policy "anon_insert_analytics_events" on analytics_events
+  for insert to anon with check (true);
+
+create policy "anon_select_analytics_events" on analytics_events
+  for select to anon using (true);

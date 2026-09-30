@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_instagram_clone/core/data/backend_data_source.dart';
+import 'package:flutter_instagram_clone/core/utils/analytics_service.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_suggested_user.dart';
 import 'package:flutter_instagram_clone/core/utils/post_dummy_data.dart';
@@ -40,6 +41,12 @@ class FollowStore extends Notifier<Map<String, bool>> {
     if (username.isEmpty) return;
     final nowFollowing = !isFollowing(username);
     state = {...state, username: nowFollowing};
+    // P7-3: best-effort analytics; never blocks the toggle.
+    analytics.log(
+      AnalyticsEvent.follow,
+      userId: DummyData.currentUser['username'] as String?,
+      payload: {'target': username, 'following': nowFollowing},
+    );
     // Phase 5: persist when a backend is configured (best-effort).
     ref.read(backendDataSourceProvider).setFollow(
           targetUsername: username,

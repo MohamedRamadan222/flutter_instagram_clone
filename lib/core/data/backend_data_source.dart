@@ -23,9 +23,12 @@ class BackendDataSource {
 
   bool get _available => AppConfig.hasBackend;
 
+  // P7-3: exposes the guarded client so AnalyticsService can attach once
+  // without duplicating init logic. Null when no backend is configured.
+  SupabaseClient? get client => _init();
+
   /// Lazy, guarded client. Never throws when the backend is not configured.
-  SupabaseClient? _init() {
-    if (!_available) return null;
+  SupabaseClient? _init() {    if (!_available) return null;
     try {
       if (_client != null) return _client;
       Supabase.initialize(
