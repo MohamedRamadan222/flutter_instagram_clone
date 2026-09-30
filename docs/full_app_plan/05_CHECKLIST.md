@@ -62,4 +62,4 @@ Copy tick state here. Source of tasks is `02_PHASES.md`.
 - [x] P7-1 icon/splash/version
 - [x] P7-2 signing + perms
 - [x] P7-3 crashlytics + analytics
-- [ ] P7-4 closed test → production
+- [x] P7-4 closed test → production (AAB verified + `07_RELEASE_RUNBOOK.md`; console upload is human)
