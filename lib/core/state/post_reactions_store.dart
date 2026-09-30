@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_instagram_clone/core/data/backend_data_source.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
@@ -61,7 +63,34 @@ class PostReactionsStore
     };
   }
 
-  PostReactions of(String postId) => state[postId]!;
+  static const _fallback = PostReactions(
+    liked: false,
+    likes: 0,
+    saved: false,
+    reposted: false,
+    reposts: 0,
+    shares: 0,
+  );
+
+  static bool _asBool(dynamic value, bool fallback) {
+    if (value is bool) return value;
+    if (value is int) return value != 0;
+    if (value is String) {
+      final v = value.toLowerCase().trim();
+      if (v == 'true' || v == '1') return true;
+      if (v == 'false' || v == '0' || v.isEmpty) return false;
+    }
+    return fallback;
+  }
+
+  static int _asInt(dynamic value, int fallback) {
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
+  PostReactions of(String postId) => state[postId] ?? _fallback;
 
   void toggleLike(String postId) {
     final r = of(postId);
@@ -69,7 +98,7 @@ class PostReactionsStore
       ...state,
       postId: r.copyWith(
         liked: !r.liked,
-        likes: r.likes + (r.liked ? -1 : 1),
+        likes: max(0, r.likes + (r.liked ? -1 : 1)),
       ),
     };
     // Phase 5: persist when a backend is configured (best-effort).
@@ -94,23 +123,30 @@ class PostReactionsStore
   /// back to the same store the feed bookmark reads (P2-2).
   void setSaved(String postId, bool saved) {
     final r = of(postId);
+    if (r.saved == saved) return;
     state = {...state, postId: r.copyWith(saved: saved)};
+    ref.read(backendDataSourceProvider).togglePostSave(
+          postId: postId,
+          username: DummyData.currentUser['username'] as String,
+          saved: !saved,
+        );
   }
 
   /// Registers a freshly created post (Phase 3) so the feed card has
   /// reaction state for it. No-op when the post is already known.
   void seedPost(Map<String, dynamic> post) {
-    final id = post['id'] as String;
+    final id = post['id'] as String?;
+    if (id == null || id.isEmpty) return;
     if (state.containsKey(id)) return;
     state = {
       ...state,
       id: PostReactions(
-        liked: post['liked'] ?? false,
-        likes: post['likes'] as int? ?? 0,
-        saved: post['saved'] ?? false,
+        liked: _asBool(post['liked'], false),
+        likes: _asInt(post['likes'], 0),
+        saved: _asBool(post['saved'], false),
         reposted: false,
-        reposts: post['reposts'] as int? ?? 0,
-        shares: post['shares'] as int? ?? 0,
+        reposts: _asInt(post['reposts'], 0),
+        shares: _asInt(post['shares'], 0),
       ),
     };
   }
@@ -120,15 +156,22 @@ class PostReactionsStore
   void seedBatch(List<Map<String, dynamic>> posts) {
     final next = <String, PostReactions>{};
     for (final post in posts) {
-      final id = post['id'] as String;
+      final id = post['id'] as String?;
+      if (id == null || id.isEmpty) continue;
       final existing = state[id];
+      // Session mutations win for flags; backend wins for counts.
+      // Accepts both `liked`/`saved` and legacy `id_liked`/`id_saved` keys.
+      final liked = existing?.liked ??
+          _asBool(post['liked'] ?? post['id_liked'], false);
+      final saved = existing?.saved ??
+          _asBool(post['saved'] ?? post['id_saved'], false);
       next[id] = PostReactions(
-        liked: post['liked'] ?? existing?.liked ?? false,
-        likes: post['likes'] as int? ?? existing?.likes ?? 0,
-        saved: post['saved'] ?? existing?.saved ?? false,
+        liked: liked,
+        likes: _asInt(post['likes'], existing?.likes ?? 0),
+        saved: saved,
         reposted: existing?.reposted ?? false,
-        reposts: post['reposts'] as int? ?? existing?.reposts ?? 0,
-        shares: post['shares'] as int? ?? existing?.shares ?? 0,
+        reposts: _asInt(post['reposts'], existing?.reposts ?? 0),
+        shares: _asInt(post['shares'], existing?.shares ?? 0),
       );
     }
     state = {...state, ...next};
@@ -140,7 +183,7 @@ class PostReactionsStore
       ...state,
       postId: r.copyWith(
         reposted: !r.reposted,
-        reposts: r.reposts + (r.reposted ? -1 : 1),
+        reposts: max(0, r.reposts + (r.reposted ? -1 : 1)),
       ),
     };
   }

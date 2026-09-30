@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/common/widgets/feed_states.dart';
 import 'package:flutter_instagram_clone/core/utils/messages_dummy_data.dart';
 import 'package:flutter_instagram_clone/feature/message/presentation/views/chat_detail_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +12,26 @@ class MessagesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chats = MessagesDummyData.chats;
+    if (chats.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          title: Text(
+            'Messages',
+            style: GoogleFonts.outfit(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        body: const EmptyState(
+          icon: Icons.mail_outline,
+          title: 'No messages yet',
+          subtitle: 'Your conversations will appear here.',
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -31,7 +52,7 @@ class MessagesScreen extends StatelessWidget {
         ),
         itemBuilder: (context, i) {
           final chat = chats[i];
-          final unread = chat['unread'] as int;
+          final unread = chat['unread'] as int? ?? 0;
           return ListTile(
             onTap: () => Navigator.push(
               context,
@@ -40,18 +61,18 @@ class MessagesScreen extends StatelessWidget {
               ),
             ),
             leading: CustomCircleAvatar(
-              imgUrl: chat['profilePic'],
+              imgUrl: '${chat['profilePic'] ?? ''}',
               radius: 24.r,
             ),
             title: Text(
-              chat['username'],
+              '${chat['username'] ?? ''}',
               style: GoogleFonts.outfit(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
               ),
             ),
             subtitle: Text(
-              chat['lastMessage'],
+              '${chat['lastMessage'] ?? ''}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.outfit(color: Colors.grey),
@@ -60,7 +81,7 @@ class MessagesScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  chat['timeAgo'],
+                  '${chat['timeAgo'] ?? ''}',
                   style: GoogleFonts.outfit(
                     color: Colors.grey,
                     fontSize: 12.sp,

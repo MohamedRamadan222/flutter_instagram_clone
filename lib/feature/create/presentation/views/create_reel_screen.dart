@@ -50,6 +50,7 @@ class _CreateReelScreenState extends ConsumerState<CreateReelScreen> {
   }
 
   void _share() {
+    if (_video == null) return;
     final user = DummyData.currentUser;
     final reel = <String, dynamic>{
       'id': 'me_reel_${DateTime.now().millisecondsSinceEpoch}',
@@ -63,8 +64,9 @@ class _CreateReelScreenState extends ConsumerState<CreateReelScreen> {
       'isFollowing': true,
     };
     ref.read(reelsProvider.notifier).addReel(reel);
+    final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       const SnackBar(content: Text('Your reel has been shared')),
     );
   }

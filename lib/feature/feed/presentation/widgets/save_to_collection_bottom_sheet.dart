@@ -9,7 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 
 class SaveToCollectionBottomSheet extends ConsumerStatefulWidget {
-  final Map post;
+  final Map<String, dynamic> post;
   final BuildContext parentContext;
 
   const SaveToCollectionBottomSheet({
@@ -27,7 +27,7 @@ class _SaveToCollectionBottomSheetState
     extends ConsumerState<SaveToCollectionBottomSheet> {
   late final Set<String> _savedTo;
 
-  String get _postId => widget.post['id'] as String;
+  String get _postId => '${widget.post['id'] ?? ''}';
 
   @override
   void initState() {
@@ -60,9 +60,10 @@ class _SaveToCollectionBottomSheetState
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             Text(
               'Save to collection',
               style: GoogleFonts.outfit(
@@ -93,7 +94,7 @@ class _SaveToCollectionBottomSheetState
                   ),
                 ),
                 subtitle: Text(
-                  '${(c['posts'] as List).length} posts • ${c['privacy']}',
+                  '${(c['posts'] as List? ?? []).length} posts • ${c['privacy'] ?? ''}',
                   style: GoogleFonts.outfit(color: Colors.grey, fontSize: 12.sp),
                 ),
                 trailing: Icon(
@@ -127,8 +128,9 @@ class _SaveToCollectionBottomSheetState
                 ),
               ),
               onTap: () {
+                final messenger = ScaffoldMessenger.of(widget.parentContext);
                 Navigator.pop(context);
-                ScaffoldMessenger.of(widget.parentContext).showSnackBar(
+                messenger.showSnackBar(
                   const SnackBar(
                     content: Text(
                       'Creating collections is coming in a later phase',
@@ -137,7 +139,8 @@ class _SaveToCollectionBottomSheetState
                 );
               },
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -162,6 +165,10 @@ class _CollectionPreview extends StatelessWidget {
         baseColor: AppColors.shimmerBase,
         highlightColor: AppColors.shimmerHighlight,
         child: Container(color: Colors.black),
+      ),
+      errorWidget: (context, url, error) => Container(
+        color: Colors.grey.shade900,
+        child: const Icon(Icons.broken_image, color: Colors.grey),
       ),
     );
   }

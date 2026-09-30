@@ -50,8 +50,8 @@ class _MainScreenState extends State<MainScreen> {
       body: PageView(
         controller: pageController,
         onPageChanged: onPageChanged,
-        physics: NeverScrollableScrollPhysics(),
-        children: [
+        physics: const NeverScrollableScrollPhysics(),
+        children: const [
           HomeScreen(),
           ReelsScreen(),
           MessagesScreen(),
@@ -121,12 +121,12 @@ class _MainScreenState extends State<MainScreen> {
                 ),
                 child: ClipOval(
                   child: CachedNetworkImage(
-                    imageUrl: user['profilePic'] as String,
+                    imageUrl: '${user['profilePic'] ?? ''}',
                     fit: BoxFit.cover,
                     placeholder: (context, url) =>
                         Container(color: Colors.grey.shade800),
                     errorWidget: (context, url, error) =>
-                        Icon(Icons.person, size: 20),
+                        const Icon(Icons.person, size: 20),
                   ),
                 ),
               ),

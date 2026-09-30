@@ -9,6 +9,7 @@ class ThreadsLikesStore extends Notifier<Set<String>> {
   bool isLiked(String key) => state.contains(key);
 
   void toggle(String key) {
+    if (key.isEmpty) return;
     final next = {...state};
     if (!next.remove(key)) {
       next.add(key);

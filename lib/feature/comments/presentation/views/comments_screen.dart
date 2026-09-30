@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/common/widgets/feed_states.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/message_composer.dart';
 import 'package:flutter_instagram_clone/core/state/comments_store.dart';
 import 'package:flutter_instagram_clone/core/state/post_reactions_store.dart';
@@ -24,14 +25,18 @@ class CommentsScreen extends ConsumerStatefulWidget {
 
 class _CommentsScreenState extends ConsumerState<CommentsScreen> {
   final TextEditingController _controller = TextEditingController();
+  bool _loadingComments = false;
 
-  String get _postId => (widget.post['id'] ?? 'unknown') as String;
+  String get _postId => '${widget.post['id'] ?? 'unknown'}';
 
   @override
   void initState() {
     super.initState();
     // P5-3: replace dummy comments with backend rows when configured.
-    ref.read(commentsProvider.notifier).hydrate(_postId);
+    _loadingComments = true;
+    ref.read(commentsProvider.notifier).hydrate(_postId).whenComplete(() {
+      if (mounted) setState(() => _loadingComments = false);
+    });
   }
 
   @override
@@ -109,12 +114,32 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
               ],
             ),
           Expanded(
-            child: comments.isEmpty
-                ? Center(
-                    child: Text(
-                      'No comments yet. Be the first.',
-                      style: GoogleFonts.outfit(color: Colors.grey),
+            child: _loadingComments && comments.isEmpty
+                ? ListView.separated(
+                    itemCount: 4,
+                    separatorBuilder: (_, __) => SizedBox(height: 4.h),
+                    itemBuilder: (context, i) => ListTile(
+                      leading: ShimmerBox(
+                        width: 32.w,
+                        height: 32.w,
+                        radius: 16,
+                      ),
+                      title: ShimmerBox(
+                        width: double.infinity,
+                        height: 12.h,
+                        radius: 6,
+                      ),
+                      subtitle: Padding(
+                        padding: EdgeInsets.only(top: 6.h),
+                        child: ShimmerBox(width: 120.w, height: 10.h, radius: 5),
+                      ),
                     ),
+                  )
+                : comments.isEmpty
+                ? EmptyState(
+                    icon: Icons.chat_bubble_outline,
+                    title: 'No comments yet',
+                    subtitle: 'Be the first to comment.',
                   )
                 : ListView.separated(
                     itemCount: comments.length,
@@ -123,12 +148,12 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                       final c = comments[i];
                       return ListTile(
                         leading: CustomCircleAvatar(
-                          imgUrl: c['profilePic'],
+                          imgUrl: '${c['profilePic'] ?? ''}',
                           radius: 16.r,
                         ),
                         title: RichText(
                           text: TextSpan(
-                            text: '${c['username']} ',
+                            text: '${c['username'] ?? 'user'} ',
                             style: GoogleFonts.outfit(
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
@@ -136,7 +161,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                             ),
                             children: [
                               TextSpan(
-                                text: '${c['comment']}',
+                                text: '${c['comment'] ?? ''}',
                                 style: GoogleFonts.outfit(
                                   fontWeight: FontWeight.normal,
                                   color: Colors.white,
@@ -146,7 +171,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                           ),
                         ),
                         subtitle: Text(
-                          '${c['time']}  •  ${c['likes']} likes',
+                          '${c['time'] ?? 'just now'}  •  ${c['likes'] ?? 0} likes',
                           style: GoogleFonts.outfit(
                             fontSize: 12.sp,
                             color: Colors.grey,
@@ -167,7 +192,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
             onSend: _sendComment,
             hintText: 'Add a comment...',
             leading: CustomCircleAvatar(
-              imgUrl: DummyData.currentUser['profilePic'],
+              imgUrl: '${DummyData.currentUser['profilePic'] ?? ''}',
               radius: 16.r,
             ),
           ),

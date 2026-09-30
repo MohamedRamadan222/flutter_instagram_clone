@@ -10,5 +10,6 @@ class AppConfig {
       String.fromEnvironment('SUPABASE_ANON_KEY');
 
   static bool get hasBackend =>
-      supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+      supabaseUrl.trim().startsWith('http') &&
+      supabaseAnonKey.trim().isNotEmpty;
 }

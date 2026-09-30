@@ -24,10 +24,12 @@ class StoryCircle extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    bool hasStory = story['hasStory'] ?? true;
-    bool isSeen = (story['isSeen'] ?? false) || (forceSeen ?? false);
-    bool isLive = story['isLive'] ?? false;
-    bool isUsernameYourStory = story['userName'] == 'Your story';
+    final hasStory = story['hasStory'] ?? true;
+    final isSeen = (story['isSeen'] ?? false) || (forceSeen ?? false);
+    final isLive = story['isLive'] ?? false;
+    final isUsernameYourStory = story['userName'] == 'Your story';
+    final profileImage = '${story['profileImage'] ?? ''}';
+    final username = '${story['username'] ?? ''}';
 
     return GestureDetector(
       onTap: () async {
@@ -37,7 +39,7 @@ class StoryCircle extends ConsumerWidget {
           return;
         }
         // P4-2: the viewer is a routed screen keyed by username
-        await context.push('/story?user=${story['username']}');
+        await context.push('/story?user=${Uri.encodeComponent(username)}');
         // mark as seen once the viewer is closed (P1-7)
         onViewed?.call();
       },
@@ -73,7 +75,7 @@ class StoryCircle extends ConsumerWidget {
                       color: Colors.black,
                     ),
                     child: CustomCircleAvatar(
-                      imgUrl: story['profileImage'],
+                      imgUrl: profileImage,
                       radius: 32.r,
                     ),
                   ),
@@ -93,6 +95,9 @@ class StoryCircle extends ConsumerWidget {
                   ),
                 if (isLive)
                   Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
                     child: Center(
                       child: Container(
                         padding: EdgeInsets.symmetric(
@@ -120,7 +125,7 @@ class StoryCircle extends ConsumerWidget {
             SizedBox(height: 5.h),
             Expanded(
               child: Text(
-                isUsernameYourStory ? 'Your story' : story['username'],
+                isUsernameYourStory ? 'Your story' : username,
                 style: GoogleFonts.outfit(
                   fontSize: 12.sp,
                   color: isUsernameYourStory ? Colors.grey : Colors.white,

@@ -57,19 +57,32 @@ class _SearchScreenState extends State<SearchScreen> {
       body: CustomScrollView(
         slivers: [
           if (_query.isNotEmpty)
+            if (accounts.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(
+                    child: Text(
+                      'No results',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                ),
+              )
+            else
             SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, i) => ListTile(
                   leading: CustomCircleAvatar(
-                    imgUrl: accounts[i]['profilePic'],
+                    imgUrl: '${accounts[i]['profilePic'] ?? ''}',
                     radius: 20.r,
                   ),
                   title: Text(
-                    accounts[i]['username'],
+                    '${accounts[i]['username'] ?? ''}',
                     style: GoogleFonts.outfit(color: Colors.white),
                   ),
                   subtitle: Text(
-                    accounts[i]['name'],
+                    '${accounts[i]['name'] ?? ''}',
                     style: GoogleFonts.outfit(color: Colors.grey),
                   ),
                   onTap: () => Navigator.push(
@@ -80,6 +93,18 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
                 childCount: accounts.length,
+              ),
+            )
+          else if (media.isEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(
+                  child: Text(
+                    'Nothing to explore yet',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
               ),
             )
           else
@@ -97,12 +122,20 @@ class _SearchScreenState extends State<SearchScreen> {
                     fit: StackFit.expand,
                     children: [
                       CachedNetworkImage(
-                        imageUrl: (item['thumbnail'] ?? item['url']) as String,
+                        imageUrl:
+                            '${item['thumbnail'] ?? item['url'] ?? ''}',
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Shimmer.fromColors(
                           baseColor: AppColors.shimmerBase,
                           highlightColor: AppColors.shimmerHighlight,
                           child: Container(color: Colors.black),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey.shade900,
+                          child: const Icon(
+                            Icons.broken_image,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
                       if (isVideo)
@@ -118,7 +151,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ],
                   );
                 },
-                childCount: 30,
+                childCount: media.length,
               ),
             ),
         ],

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/common/widgets/feed_states.dart';
+import 'package:flutter_instagram_clone/core/config/app_config.dart';
 import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/state/reels_likes_store.dart';
 import 'package:flutter_instagram_clone/core/state/reels_store.dart';
@@ -22,11 +24,49 @@ class ReelsScreen extends ConsumerStatefulWidget {
 
 class _ReelsScreenState extends ConsumerState<ReelsScreen> {
   late final PageController _controller;
+  bool _loading = false;
+  bool _loadError = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = PageController(initialPage: widget.initialIndex);
+    final reels = ref.read(reelsProvider);
+    final safeIndex = reels.isEmpty
+        ? 0
+        : widget.initialIndex.clamp(0, reels.length - 1);
+    _controller = PageController(initialPage: safeIndex);
+    if (AppConfig.hasBackend) _hydrate();
+  }
+
+  Future<void> _hydrate() async {
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _loadError = false;
+    });
+    var failed = false;
+    try {
+      final ok = await ref.read(reelsProvider.notifier).hydrate();
+      if (!ok && ref.read(reelsProvider).isEmpty) failed = true;
+    } catch (_) {
+      failed = true;
+    }
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      _loadError = failed;
+    });
+  }
+
+  @override
+  void didUpdateWidget(ReelsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialIndex != widget.initialIndex) {
+      final reels = ref.read(reelsProvider);
+      if (reels.isEmpty) return;
+      final safe = widget.initialIndex.clamp(0, reels.length - 1);
+      _controller.jumpToPage(safe);
+    }
   }
 
   @override
@@ -38,6 +78,41 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
   @override
   Widget build(BuildContext context) {
     final reels = ref.watch(reelsProvider);
+    if (_loading && reels.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(backgroundColor: Colors.black, elevation: 0),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_loadError && reels.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(backgroundColor: Colors.black, elevation: 0),
+        body: ErrorState(
+          message: 'Couldn\'t load reels. Check your connection.',
+          onRetry: _hydrate,
+        ),
+      );
+    }
+    if (reels.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(backgroundColor: Colors.black, elevation: 0),
+        body: EmptyState(
+          icon: Icons.movie_outlined,
+          title: 'No reels yet',
+          subtitle: 'Create the first reel to get started.',
+          actionLabel: 'Create reel',
+          onAction: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CreateReelScreen()),
+            );
+          },
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -72,7 +147,7 @@ class _ReelPage extends ConsumerWidget {
   const _ReelPage({required this.reel});
 
   void _openComments(BuildContext context) {
-    context.push('/comments/${reel['id']}');
+    context.push('/comments/${reel['id'] ?? ''}');
   }
 
   void _shareReel(BuildContext context) {
@@ -80,7 +155,7 @@ class _ReelPage extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.black,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => SharePostBottomSheet(post: reel),
@@ -89,16 +164,21 @@ class _ReelPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final reelId = '${reel['id'] ?? ''}';
+    final reelUsername = '${reel['username'] ?? ''}';
     final isLiked = ref.watch(
-      reelsLikesProvider.select((s) => s.contains(reel['id'])),
+      reelsLikesProvider.select((s) => s.contains(reelId)),
     );
     final isFollowing = ref.watch(
-      followProvider.select((f) => f[reel['username']] ?? false),
+      followProvider.select((f) => f[reelUsername] ?? false),
     );
     return Stack(
       fit: StackFit.expand,
       children: [
-        PostVideoPlayer(videoUrl: reel['videoUrl']),
+        PostVideoPlayer(
+          videoUrl: '${reel['videoUrl'] ?? ''}',
+          playerId: reelId,
+        ),
         Positioned(
           right: 8.w,
           bottom: 80.h,
@@ -106,15 +186,15 @@ class _ReelPage extends ConsumerWidget {
             children: [
               _Action(
                 icon: isLiked ? Icons.favorite : Icons.favorite_border,
-                label: '${reel['likes']}',
+                label: '${reel['likes'] ?? ''}',
                 iconColor: isLiked ? Colors.red : Colors.white,
                 onTap: () =>
-                    ref.read(reelsLikesProvider.notifier).toggle(reel['id']),
+                    ref.read(reelsLikesProvider.notifier).toggle(reelId),
               ),
               SizedBox(height: 16.h),
               _Action(
                 icon: Icons.comment_outlined,
-                label: '${reel['comments']}',
+                label: '${reel['comments'] ?? ''}',
                 onTap: () => _openComments(context),
               ),
               SizedBox(height: 16.h),
@@ -136,23 +216,26 @@ class _ReelPage extends ConsumerWidget {
               Row(
                 children: [
                   CustomCircleAvatar(
-                    imgUrl: reel['profilePic'],
+                    imgUrl: '${reel['profilePic'] ?? ''}',
                     radius: 14.r,
                   ),
                   SizedBox(width: 8.w),
-                  Text(
-                    reel['username'],
-                    style: GoogleFonts.outfit(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14.sp,
+                  Expanded(
+                    child: Text(
+                      reelUsername,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14.sp,
+                      ),
                     ),
                   ),
                   SizedBox(width: 8.w),
                   GestureDetector(
                     onTap: () => ref
                         .read(followProvider.notifier)
-                        .toggle(reel['username']),
+                        .toggle(reelUsername),
                     child: Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: 10.w,
@@ -175,7 +258,9 @@ class _ReelPage extends ConsumerWidget {
               ),
               SizedBox(height: 8.h),
               Text(
-                reel['caption'],
+                '${reel['caption'] ?? ''}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.outfit(
                   color: Colors.white,
                   fontSize: 13.sp,
@@ -192,7 +277,7 @@ class _ReelPage extends ConsumerWidget {
                   SizedBox(width: 4.w),
                   Expanded(
                     child: Text(
-                      reel['audioTitle'],
+                      '${reel['audioTitle'] ?? ''}',
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.outfit(
                         color: Colors.white,

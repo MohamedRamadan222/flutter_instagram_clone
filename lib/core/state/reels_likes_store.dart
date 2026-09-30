@@ -8,6 +8,7 @@ class ReelsLikesStore extends Notifier<Set<String>> {
   bool isLiked(String id) => state.contains(id);
 
   void toggle(String id) {
+    if (id.isEmpty) return;
     final next = {...state};
     if (!next.remove(id)) {
       next.add(id);

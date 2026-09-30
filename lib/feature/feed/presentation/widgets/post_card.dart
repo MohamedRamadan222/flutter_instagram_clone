@@ -34,7 +34,7 @@ class _PostCardState extends ConsumerState<PostCard> {
   bool _isExpanded = false;
   static const int _maxLine = 1;
 
-  String get _postId => widget.snap['id'] as String;
+  String get _postId => '${widget.snap['id'] ?? ''}';
 
   @override
   void initState() {
@@ -42,8 +42,8 @@ class _PostCardState extends ConsumerState<PostCard> {
   }
 
   void _handleDoubleTap() {
-    final reactions = ref.read(postReactionsProvider)[_postId]!;
-    if (!reactions.liked) {
+    final reactions = ref.read(postReactionsProvider)[_postId];
+    if (reactions != null && !reactions.liked) {
       ref.read(postReactionsProvider.notifier).toggleLike(_postId);
     }
     setState(() {
@@ -71,9 +71,11 @@ class _PostCardState extends ConsumerState<PostCard> {
   @override
   Widget build(BuildContext context) {
     final user = DummyData.currentUser;
-    final caption = widget.snap['caption'] ?? '';
-    final reactions =
-        ref.watch(postReactionsProvider.select((m) => m[_postId]))!;
+    final caption = '${widget.snap['caption'] ?? ''}';
+    final reactions = ref.watch(postReactionsProvider.select((m) => m[_postId]));
+    if (reactions == null || _postId.isEmpty) {
+      return const SizedBox.shrink();
+    }
     final commentsCount =
         ref.watch(commentsProvider.select((m) => m[_postId]?.length ?? 0));
     final isFollowingUser = ref.watch(
@@ -96,7 +98,7 @@ class _PostCardState extends ConsumerState<PostCard> {
               child: Row(
                 children: [
                   CustomCircleAvatar(
-                    imgUrl: widget.snap['profilePic'],
+                    imgUrl: '${widget.snap['profilePic'] ?? ''}',
                     radius: 16,
                   ),
                   Expanded(
@@ -140,13 +142,13 @@ class _PostCardState extends ConsumerState<PostCard> {
                   ),
                   Row(
                     children: [
-                      if (widget.isMyPost)
+                      if (!widget.isMyPost)
                         SizedBox(
                           height: 30.h,
                           child: ElevatedButton(
                             onPressed: () => ref
                                 .read(followProvider.notifier)
-                                .toggle(widget.snap['username']),
+                                .toggle('${widget.snap['username'] ?? ''}'),
                             style: ElevatedButton.styleFrom(
                               padding: EdgeInsets.symmetric(horizontal: 10),
                               backgroundColor: Colors.grey.shade900,
@@ -164,19 +166,21 @@ class _PostCardState extends ConsumerState<PostCard> {
                             ),
                           ),
                         ),
-                      const SizedBox(height: 6),
+                      const SizedBox(width: 6),
                       IconButton(
+                        tooltip: 'Post options',
                         onPressed: () {
                           // show post options bottomsSheet
                           showModalBottomSheet(
                             context: context,
-                            backgroundColor: Color(0xff00080E),
-                            shape: RoundedRectangleBorder(
+                            backgroundColor: const Color(0xff00080E),
+                            shape: const RoundedRectangleBorder(
                               borderRadius: BorderRadius.vertical(
                                 top: Radius.circular(20),
                               ),
                             ),
-                            builder: (context) => PostOptionsBottomSheet(),
+                            builder: (context) =>
+                                const PostOptionsBottomSheet(),
                           );
                         },
                         icon: Icon(
@@ -194,10 +198,10 @@ class _PostCardState extends ConsumerState<PostCard> {
           // image section
           GestureDetector(
             onTap: () {
-              final media = widget.snap['media'] as List;
+              final media = widget.snap['media'] as List? ?? [];
               // check if post contains only 1 video
-              if (media.length == 1 && media[0]['type'] == 'video') {
-                final videoUrl = media[0]['reelId'];
+              if (media.length == 1 && (media[0] as Map)['type'] == 'video') {
+                final videoUrl = (media[0] as Map)['reelId'];
 
                 // find reel index with same video
                 final index = ReelDummyData.reels.indexWhere(
@@ -209,55 +213,80 @@ class _PostCardState extends ConsumerState<PostCard> {
                 }
               }
             },
+            onDoubleTap: _handleDoubleTap,
             child: SizedBox(
-              height: 320,
+              height: 320.h,
               child: Stack(
                 children: [
-                  GestureDetector(
-                    onDoubleTap: _handleDoubleTap,
-                    child: PageView.builder(
-                      controller: _pageController,
-                      itemCount: (widget.snap['media'] as List).length,
-                      onPageChanged: (index) {
-                        setState(() {
-                          _currentIndex = index;
-                        });
-                      },
-                      itemBuilder: (context, index) {
-                        final media = widget.snap['media'][index];
-                        if (media['type'] == 'image') {
-                          final url = media['url'] as String;
-                          if (url.startsWith('http')) {
-                            return CachedNetworkImage(
-                              imageUrl: url,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              placeholder: (context, url) => Shimmer.fromColors(
-                                baseColor: Colors.grey.shade900,
-                                highlightColor: Colors.grey.shade900,
-                                child: Container(color: Colors.black),
-                              ),
-                            );
-                          }
-                          // Phase 3: locally picked post media
-                          return Image.file(
-                            File(url),
+                  PageView.builder(
+                    controller: _pageController,
+                    itemCount: (widget.snap['media'] as List? ?? []).length,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final mediaList =
+                          widget.snap['media'] as List? ?? [];
+                      final media = mediaList[index] as Map;
+                      if (media['type'] == 'image') {
+                        final url = '${media['url'] ?? ''}';
+                        if (url.startsWith('http')) {
+                          return CachedNetworkImage(
+                            imageUrl: url,
                             fit: BoxFit.cover,
                             width: double.infinity,
+                            placeholder: (context, url) => Shimmer.fromColors(
+                              baseColor: Colors.grey.shade900,
+                              highlightColor: Colors.grey.shade800,
+                              child: Container(color: Colors.black),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: Colors.grey.shade900,
+                              child: const Icon(
+                                Icons.broken_image,
+                                color: Colors.grey,
+                              ),
+                            ),
                           );
                         }
+                        if (url.isEmpty) {
+                          return Container(
+                            color: Colors.grey.shade900,
+                            child: const Icon(
+                              Icons.broken_image,
+                              color: Colors.grey,
+                            ),
+                          );
+                        }
+                        // Phase 3: locally picked post media
+                        return Image.file(
+                          File(url),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.grey.shade900,
+                            child: const Icon(
+                              Icons.broken_image,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        );
+                      }
 
-                        return PostVideoPlayer(videoUrl: media['url']);
-                      },
-                    ),
+                      return PostVideoPlayer(
+                        videoUrl: '${media['url'] ?? ''}',
+                      );
+                    },
                   ),
                   // Page Indicator
-                  if (widget.snap['media'].length > 1)
+                  if ((widget.snap['media'] as List? ?? []).length > 1)
                     Positioned(
                       top: 10,
                       right: 10,
                       child: Container(
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 3,
                         ),
@@ -266,7 +295,7 @@ class _PostCardState extends ConsumerState<PostCard> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          "${_currentIndex + 1} /${widget.snap['media'].length}",
+                          "${_currentIndex + 1} / ${(widget.snap['media'] as List? ?? []).length}",
                           style: GoogleFonts.outfit(
                             color: Colors.white,
                             fontSize: 12,
@@ -288,7 +317,7 @@ class _PostCardState extends ConsumerState<PostCard> {
                   ),
 
                   // dot indicator
-                  if (widget.snap['media'].length > 1)
+                  if ((widget.snap['media'] as List? ?? []).length > 1)
                     Positioned(
                       bottom: 10,
                       right: 0,
@@ -296,7 +325,7 @@ class _PostCardState extends ConsumerState<PostCard> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
-                          widget.snap['media'].length,
+                          (widget.snap['media'] as List? ?? []).length,
                           (index) => Container(
                             margin: EdgeInsets.symmetric(horizontal: 3),
                             width: 6,
@@ -328,7 +357,7 @@ class _PostCardState extends ConsumerState<PostCard> {
                             decoration: BoxDecoration(shape: BoxShape.circle),
                             child: CustomCircleAvatar(
                               radius: 20,
-                              imgUrl: user['profilePic'],
+                              imgUrl: '${user['profilePic'] ?? ''}',
                             ),
                           ),
 
@@ -362,6 +391,7 @@ class _PostCardState extends ConsumerState<PostCard> {
               Row(
                 children: [
                   IconButton(
+                    tooltip: reactions.liked ? 'Unlike' : 'Like',
                     onPressed: () => ref
                         .read(postReactionsProvider.notifier)
                         .toggleLike(_postId),
@@ -599,7 +629,7 @@ class _PostCardState extends ConsumerState<PostCard> {
                   ),
 
                 Text(
-                  widget.snap['timeAgo'],
+                  '${widget.snap['timeAgo'] ?? 'just now'}',
                   style: GoogleFonts.outfit(fontSize: 11, color: Colors.grey),
                 ),
               ],

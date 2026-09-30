@@ -73,7 +73,8 @@ class _ThreadCard extends ConsumerWidget {
 
   const _ThreadCard({required this.thread});
 
-  String get threadId => '${thread['username']}|${thread['timeAgo']}';
+  String get threadId =>
+      '${thread['id'] ?? thread['username']}|${thread['timeAgo'] ?? ''}';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -96,7 +97,7 @@ class _ThreadCard extends ConsumerWidget {
           Row(
             children: [
               CustomCircleAvatar(
-                imgUrl: thread['profilePic'],
+                imgUrl: '${thread['profilePic'] ?? ''}',
                 radius: 16.r,
               ),
               SizedBox(width: 8.w),
@@ -105,7 +106,7 @@ class _ThreadCard extends ConsumerWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        thread['username'],
+                        '${thread['username'] ?? ''}',
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.outfit(
                           fontSize: 13.sp,
@@ -126,7 +127,7 @@ class _ThreadCard extends ConsumerWidget {
                 ),
               ),
               Text(
-                thread['timeAgo'],
+                '${thread['timeAgo'] ?? ''}',
                 style: GoogleFonts.outfit(
                   fontSize: 12.sp,
                   color: Colors.grey,
@@ -136,7 +137,7 @@ class _ThreadCard extends ConsumerWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            thread['text'],
+            '${thread['text'] ?? ''}',
             maxLines: hasImage ? 2 : 4,
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.outfit(
@@ -159,6 +160,14 @@ class _ThreadCard extends ConsumerWidget {
                   highlightColor: AppColors.shimmerHighlight,
                   child: Container(color: Colors.black),
                 ),
+                errorWidget: (context, url, error) => Container(
+                  height: 80.h,
+                  color: Colors.grey.shade900,
+                  child: const Icon(
+                    Icons.broken_image,
+                    color: Colors.grey,
+                  ),
+                ),
               ),
             ),
           ],
@@ -177,7 +186,7 @@ class _ThreadCard extends ConsumerWidget {
                   ),
                   SizedBox(width: 4.w),
                   Text(
-                    '${thread['likes'] + (liked ? 1 : 0)}',
+                    '${(int.tryParse('${thread['likes'] ?? 0}') ?? 0) + (liked ? 1 : 0)}',
                     style: GoogleFonts.outfit(
                       fontSize: 12.sp,
                       color: Colors.grey,

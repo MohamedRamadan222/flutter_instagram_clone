@@ -6,8 +6,9 @@ import 'package:visibility_detector/visibility_detector.dart';
 
 class PostVideoPlayer extends StatefulWidget {
   final String videoUrl;
+  final String? playerId;
 
-  const PostVideoPlayer({super.key, required this.videoUrl});
+  const PostVideoPlayer({super.key, required this.videoUrl, this.playerId});
 
   @override
   State<PostVideoPlayer> createState() => _PostVideoPlayerState();
@@ -25,7 +26,24 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
     _createController();
   }
 
+  @override
+  void didUpdateWidget(PostVideoPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.videoUrl != widget.videoUrl) {
+      _controller?.dispose();
+      _controller = null;
+      _isInit = false;
+      _failed = false;
+      _createController();
+    }
+  }
+
   Future<void> _createController() async {
+    if (widget.videoUrl.isEmpty) {
+      if (!mounted) return;
+      setState(() => _failed = true);
+      return;
+    }
     try {
       // Phase 3: locally picked reels/videos arrive as file paths, remote ones
       // as http(s) URLs.
@@ -87,53 +105,51 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
         ),
       );
     }
+    if (!_isInit || _controller == null) {
+      return const Center(child: CircularProgressIndicator(color: Colors.white));
+    }
+    final size = _controller!.value.size;
+    if (size.width == 0 || size.height == 0) {
+      return const Center(child: CircularProgressIndicator(color: Colors.white));
+    }
     return VisibilityDetector(
-      key: Key(widget.videoUrl),
+      key: ValueKey(
+        'video_${widget.playerId ?? widget.videoUrl}_${identityHashCode(this)}',
+      ),
       onVisibilityChanged: (info) {
-        final visiblePercentage = info.visibleFraction * 100;
-
-        // play only if at least 70% visible
-        if (visiblePercentage > 70) {
-          _playPause(true);
-        } else {
-          _playPause(false);
-        }
+        const threshold = 0.7;
+        _playPause(info.visibleFraction > threshold);
       },
-      child: _isInit
-          ? Stack(
-              children: [
-                SizedBox.expand(
-                  child: FittedBox(
-                    fit: BoxFit.cover,
-                    child: SizedBox(
-                      width: _controller!.value.size.width,
-                      height: _controller!.value.size.height,
-                      child: VideoPlayer(_controller!),
-                    ),
-                  ),
-                ),
-                // mute/Unmute icon
-                Positioned(
-                  bottom: 12,
-                  right: 12,
-                  child: GestureDetector(
-                    onTap: _toggleMute,
-                    child: Container(
-                      padding: EdgeInsets.all(6),
-                      decoration: BoxDecoration(),
-                      child: Icon(
-                        _isMuted
-                            ? Icons.volume_off_rounded
-                            : Icons.volume_up_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            )
-          : Center(child: CircularProgressIndicator(color: Colors.white)),
+      child: Stack(
+        children: [
+          SizedBox.expand(
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: size.width,
+                height: size.height,
+                child: VideoPlayer(_controller!),
+              ),
+            ),
+          ),
+          // mute/Unmute icon
+          Positioned(
+            bottom: 12,
+            right: 12,
+            child: IconButton(
+              tooltip: _isMuted ? 'Unmute' : 'Mute',
+              onPressed: _toggleMute,
+              icon: Icon(
+                _isMuted
+                    ? Icons.volume_off_rounded
+                    : Icons.volume_up_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/common/widgets/feed_states.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/ig_follow_button.dart';
 import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
@@ -15,6 +16,28 @@ class ActivityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasItems = NotificationsDummyData.today.isNotEmpty ||
+        NotificationsDummyData.week.isNotEmpty;
+    if (!hasItems) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          title: Text(
+            'Notifications',
+            style: GoogleFonts.outfit(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        body: const EmptyState(
+          icon: Icons.favorite_border,
+          title: 'No notifications yet',
+          subtitle: 'Likes, follows and mentions will appear here.',
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -66,12 +89,15 @@ class _Tile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final item = this.item;
-    final username = item['username'] as String;
+    final username = '${item['username'] ?? ''}';
     final isFollowing = ref.watch(
       followProvider.select((follows) => follows[username] ?? false),
     );
     return ListTile(
-      leading: CustomCircleAvatar(imgUrl: item['profilePic'], radius: 20.r),
+      leading: CustomCircleAvatar(
+        imgUrl: '${item['profilePic'] ?? ''}',
+        radius: 20.r,
+      ),
       title: RichText(
         text: TextSpan(
           text: '${item['username']} ',
@@ -94,7 +120,7 @@ class _Tile extends ConsumerWidget {
       ),
       trailing: item['previewImage'] != null
           ? CachedNetworkImage(
-              imageUrl: item['previewImage'],
+              imageUrl: '${item['previewImage'] ?? ''}',
               width: 44.w,
               height: 44.w,
               fit: BoxFit.cover,
@@ -102,6 +128,12 @@ class _Tile extends ConsumerWidget {
                 baseColor: AppColors.shimmerBase,
                 highlightColor: AppColors.shimmerHighlight,
                 child: Container(color: Colors.black),
+              ),
+              errorWidget: (context, url, error) => Container(
+                width: 44.w,
+                height: 44.w,
+                color: Colors.grey.shade900,
+                child: const Icon(Icons.broken_image, color: Colors.grey),
               ),
             )
           : IgFollowButton(

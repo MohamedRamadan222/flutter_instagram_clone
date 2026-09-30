@@ -69,19 +69,17 @@ class _SheetItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: ListTile(
-        leading: Icon(icon, color: isDestructive ? Colors.red : Colors.white),
-        title: Text(title,
-        style: GoogleFonts.outfit(
-          color: isDestructive ? Colors.red : Colors.white,
-          fontSize: 14,
-        ),
+    return ListTile(
+      leading: Icon(icon, color: isDestructive ? Colors.red : Colors.white),
+      title: Text(title,
+      style: GoogleFonts.outfit(
+        color: isDestructive ? Colors.red : Colors.white,
+        fontSize: 14,
       ),
-        onTap: (){
-          Navigator.pop(context);
-        },
-      )
+    ),
+      onTap: (){
+        Navigator.pop(context);
+      },
     );
   }
 }

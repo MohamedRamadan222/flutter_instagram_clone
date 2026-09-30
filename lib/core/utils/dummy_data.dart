@@ -1,5 +1,7 @@
 class DummyData {
-  static Map<String, dynamic> currentUser = accounts.first;
+  static Map<String, dynamic> currentUser = Map<String, dynamic>.of(
+    accounts.first,
+  );
 
   static const List<Map<String, dynamic>> accounts = [
     {
@@ -247,36 +249,48 @@ class DummyData {
 
   /// GET LAST POST IMAGE OF COLLECTION
   static String getCollectionPreview(String collectionName) {
-    final collection = collections.firstWhere(
-      (c) => c["name"] == collectionName,
-    );
+    try {
+      final collection = collections.firstWhere(
+        (c) => c["name"] == collectionName,
+      );
 
-    final List posts = collection["posts"];
+      final List posts = collection["posts"] as List? ?? [];
 
-    if (posts.isEmpty) {
+      if (posts.isEmpty) {
+        return "";
+      }
+
+      final lastPostId = posts.last;
+
+      final post = savedPosts.firstWhere(
+        (p) => p["id"] == lastPostId,
+        orElse: () => const <String, dynamic>{},
+      );
+      return post["image"] as String? ?? "";
+    } catch (_) {
       return "";
     }
-
-    final lastPostId = posts.last;
-
-    final post = savedPosts.firstWhere((p) => p["id"] == lastPostId);
-
-    return post["image"];
   }
 
   static List<Map<String, dynamic>> getPostsByCollection(
     String collectionName,
   ) {
-    /// Find collection
-    final collection = collections.firstWhere(
-      (c) => c["name"] == collectionName,
-    );
+    try {
+      /// Find collection
+      final collection = collections.firstWhere(
+        (c) => c["name"] == collectionName,
+        orElse: () => const <String, dynamic>{},
+      );
+      if (collection.isEmpty) return [];
 
-    final List postIds = collection["posts"];
+      final List postIds = collection["posts"] as List? ?? [];
 
-    /// Filter savedPosts
-    return savedPosts.where((post) {
-      return postIds.contains(post["id"]);
-    }).toList();
+      /// Filter savedPosts
+      return savedPosts.where((post) {
+        return postIds.contains(post["id"]);
+      }).toList();
+    } catch (_) {
+      return [];
+    }
   }
 }

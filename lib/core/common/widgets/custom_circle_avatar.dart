@@ -20,9 +20,21 @@ class CustomCircleAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double diameter = radius * 2;
+    if (imgUrl.isEmpty) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: bgColor ?? Colors.grey.shade900,
+        child: errorWidget ??
+            Icon(
+              CupertinoIcons.person_fill,
+              size: radius,
+              color: Colors.grey.shade600,
+            ),
+      );
+    }
     return CircleAvatar(
       radius: radius,
-      backgroundColor: bgColor ?? Colors.grey[200],
+      backgroundColor: bgColor ?? Colors.grey.shade900,
       child: ClipOval(
         child: CachedNetworkImage(
           imageUrl: imgUrl,
@@ -30,24 +42,26 @@ class CustomCircleAvatar extends StatelessWidget {
           height: diameter,
           fit: BoxFit.cover,
           placeholder: (context, url) => Shimmer.fromColors(
-            baseColor: Colors.grey[300]!,
-            highlightColor: Colors.grey[100]!,
+            baseColor: Colors.grey.shade900,
+            highlightColor: Colors.grey.shade800,
             child: Container(
               width: diameter,
               height: diameter,
-              color: Colors.white,
+              color: Colors.black,
             ),
           ),
-          errorWidget: (context, url, error) => Container(
-            width: diameter,
-            height: diameter,
-            color: Colors.grey[300],
-            child: Icon(
-              CupertinoIcons.person_fill,
-              size: radius,
-              color: Colors.white,
+          errorWidget: (context, url, error) =>
+              errorWidget ??
+              Container(
+                width: diameter,
+                height: diameter,
+                color: Colors.grey.shade900,
+                child: Icon(
+                  CupertinoIcons.person_fill,
+                  size: radius,
+                  color: Colors.grey.shade600,
+                ),
               ),
-          ),
         ),
       ),
     );

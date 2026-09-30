@@ -37,12 +37,14 @@ class FollowStore extends Notifier<Map<String, bool>> {
   bool isFollowing(String username) => state[username] ?? false;
 
   void toggle(String username) {
-    state = {...state, username: !isFollowing(username)};
+    if (username.isEmpty) return;
+    final nowFollowing = !isFollowing(username);
+    state = {...state, username: nowFollowing};
     // Phase 5: persist when a backend is configured (best-effort).
     ref.read(backendDataSourceProvider).setFollow(
           targetUsername: username,
           me: DummyData.currentUser['username'] as String,
-          following: isFollowing(username),
+          isNowFollowing: nowFollowing,
         );
   }
 }

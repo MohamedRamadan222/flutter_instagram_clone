@@ -23,22 +23,34 @@ class StoriesStore extends Notifier<List<Map<String, dynamic>>> {
     return [yourStoryEntry(), ...StoriesDummyData.stories];
   }
 
-  /// Phase 5: replaces the strip with backend stories when configured.
+  /// Phase 5: replaces the strip with backend stories when configured,
+  /// preserving locally published stories in the leading entry.
   Future<bool> hydrate() async {
     final stories =
         await ref.read(backendDataSourceProvider).fetchStories();
-    if (stories == null) return false;
-    state = [yourStoryEntry(), ...stories];
+    if (stories == null || stories.isEmpty) return false;
+    final localStories = state.isEmpty
+        ? <Map<String, dynamic>>[]
+        : List<Map<String, dynamic>>.from(
+            state.first['stories'] as List? ?? [],
+          );
+    final entry = yourStoryEntry();
+    if (localStories.isNotEmpty) {
+      entry['stories'] = localStories;
+      entry['hasStory'] = true;
+    }
+    state = [entry, ...stories];
     return true;
   }
 
   void publishStory(String imagePath) {
-    final entry = state.first;
-    final stories = List<Map<String, dynamic>>.from(entry['stories'] as List)
+    if (imagePath.isEmpty) return;
+    final base = state.isEmpty ? yourStoryEntry() : state.first;
+    final stories = List<Map<String, dynamic>>.from(base['stories'] as List? ?? [])
       ..add({'imageUrl': imagePath});
     state = [
       {
-        ...entry,
+        ...base,
         'hasStory': stories.isNotEmpty,
         'stories': stories,
       },

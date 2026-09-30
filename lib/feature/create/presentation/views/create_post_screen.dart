@@ -32,6 +32,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   }
 
   void _share() {
+    if (_images.isEmpty) return;
     final user = DummyData.currentUser;
     final post = <String, dynamic>{
       'username': user['username'],
@@ -53,8 +54,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       'commentsData': <Map<String, dynamic>>[],
     };
     ref.read(feedPostsProvider.notifier).addPost(post);
+    final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       const SnackBar(content: Text('Your post has been shared')),
     );
   }
@@ -98,9 +100,10 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           SizedBox(
             height: 220.h,
             child: _images.isEmpty
@@ -180,7 +183,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

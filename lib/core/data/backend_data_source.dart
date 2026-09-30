@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter_instagram_clone/core/config/app_config.dart';
 import 'package:flutter_instagram_clone/core/data/local_cache.dart';
+import 'package:flutter_instagram_clone/core/utils/time_format.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 /// Supabase-backed data source (P5-3).
 ///
@@ -59,7 +59,20 @@ class BackendDataSource {
     }
   }
 
-  String _formatTimeAgo(DateTime created) => timeago.format(created);
+  String _formatTimeAgo(DateTime created) => formatTimeAgo(created);
+
+  static DateTime _parseDate(dynamic value) =>
+      value is String ? DateTime.tryParse(value) ?? DateTime.now() : DateTime.now();
+
+  static int _commentsCount(dynamic value) {
+    if (value is int) return value;
+    if (value is List && value.isNotEmpty) {
+      final first = value.first;
+      if (first is Map) return (first['count'] as int?) ?? 0;
+    }
+    if (value is Map) return (value['count'] as int?) ?? 0;
+    return 0;
+  }
 
   Map<String, dynamic> _mapPost(Map<String, dynamic> row, String? me) {
     final user = (row['users'] as Map?) ?? const {};
@@ -92,15 +105,13 @@ class BackendDataSource {
       'isFollowing': false, // hydrated through the follow store
       'media': media,
       'likes': likeIds.length,
-      'id_liked': me != null && likeIds.contains(me),
-      'id_saved': me != null && saveIds.contains(me),
+      'liked': me != null && likeIds.contains(me),
+      'saved': me != null && saveIds.contains(me),
       'caption': row['caption'] ?? '',
-      'comments': ((row['comments'] as Map?)?
-              ['count'] as int?) ??
-          0,
+      'comments': _commentsCount(row['comments']),
       'reposts': 0,
       'shares': 0,
-      'timeAgo': _formatTimeAgo(DateTime.parse(row['created_at'] as String)),
+      'timeAgo': _formatTimeAgo(_parseDate(row['created_at'])),
       'isSponsored': row['is_sponsored'] ?? false,
       'commentsData': <Map<String, dynamic>>[],
     };
@@ -109,7 +120,8 @@ class BackendDataSource {
   // ------------------------------------------------------------------ posts
 
   /// Page 1-based feed fetch. Returns null when there is no backend or the
-  /// page is past the end; falls back to the local cache on failure.
+  /// fetch failed (falls back to cache); returns an empty list at end-of-feed
+  /// so callers can stop pagination without poisoning retries.
   Future<List<Map<String, dynamic>>?> fetchPosts({
     required int page,
     String? me,
@@ -127,7 +139,7 @@ class BackendDataSource {
           )
           .order('created_at', ascending: false)
           .range(from, from + pageSize - 1);
-      if (rows.isEmpty) return null; // no more pages
+      if (rows.isEmpty) return <Map<String, dynamic>>[]; // end of feed
       final posts = [for (final r in rows) _mapPost(r, me)];
       await cache.write('feed_page_$page', posts);
       return posts;
@@ -144,6 +156,7 @@ class BackendDataSource {
     required String caption,
     required List<String> mediaPaths,
   }) async {
+    if (mediaPaths.isEmpty) return null;
     final client = _init();
     if (client == null) return null;
     try {
@@ -152,32 +165,50 @@ class BackendDataSource {
       final media = <Map<String, dynamic>>[];
       for (var i = 0; i < mediaPaths.length; i++) {
         final path = mediaPaths[i];
-        final ext = path.split('.').last.toLowerCase();
+        if (path.startsWith('http') || !await File(path).exists()) continue;
+        final ext = path.split('.').last.toLowerCase().split('?').first;
+        final isVideo = ['mp4', 'mov', 'webm'].contains(ext);
         final objectName =
             'posts/$userId/${DateTime.now().millisecondsSinceEpoch}_$i.$ext';
         await client.storage.from('posts').upload(objectName, File(path));
         final url = client.storage.from('posts').getPublicUrl(objectName);
-        media.add({'type': 'image', 'url': url, 'position': i});
+        media.add({
+          'type': isVideo ? 'video' : 'image',
+          'url': url,
+          'position': i,
+        });
       }
+      if (media.isEmpty) return null;
       final row = await client
           .from('posts')
           .insert({'user_id': userId, 'caption': caption})
           .select('id, created_at')
           .single();
-      for (final m in media) {
-        await client.from('post_media').insert({
-          'post_id': row['id'],
-          'media_type': m['type'],
-          'url': m['url'],
-          'position': m['position'],
-        });
+      try {
+        await client.from('post_media').insert([
+          for (final m in media)
+            {
+              'post_id': row['id'],
+              'media_type': m['type'],
+              'url': m['url'],
+              'position': m['position'],
+            },
+        ]);
+      } catch (_) {
+        // Avoid orphan posts when media rows fail.
+        try {
+          await client.from('posts').delete().eq('id', row['id']);
+        } catch (_) {}
+        return null;
       }
       return {
         'id': row['id'],
         'username': username,
         'name': username,
         'profilePic': '', // resolved on next feed hydration
-        'media': [for (final m in media) {'type': 'image', 'url': m['url']}],
+        'media': [
+          for (final m in media) {'type': m['type'], 'url': m['url']},
+        ],
         'likes': 0,
         'liked': false,
         'saved': false,
@@ -185,7 +216,7 @@ class BackendDataSource {
         'comments': 0,
         'reposts': 0,
         'shares': 0,
-        'timeAgo': _formatTimeAgo(DateTime.parse(row['created_at'] as String)),
+        'timeAgo': _formatTimeAgo(_parseDate(row['created_at'])),
         'isSponsored': false,
         'commentsData': <Map<String, dynamic>>[],
       };
@@ -256,11 +287,11 @@ class BackendDataSource {
       final comments = [
         for (final r in rows)
           {
-            'username': (r['users'] as Map)['username'],
-            'profilePic': (r['users'] as Map)['avatar_url'],
-            'comment': r['text'],
+            'username': (r['users'] as Map?)?['username'] ?? 'user',
+            'profilePic': (r['users'] as Map?)?['avatar_url'] ?? '',
+            'comment': r['text'] ?? '',
             'likes': 0,
-            'time': _formatTimeAgo(DateTime.parse(r['created_at'] as String)),
+            'time': _formatTimeAgo(_parseDate(r['created_at'])),
           },
       ];
       await cache.write('comments_$postId', comments);
@@ -293,7 +324,8 @@ class BackendDataSource {
   Future<void> setFollow({
     required String targetUsername,
     required String me,
-    required bool following,
+    // Whether the user is now following the target (after the local toggle).
+    required bool isNowFollowing,
   }) async {
     final client = _init();
     if (client == null) return;
@@ -301,19 +333,31 @@ class BackendDataSource {
     final targetId = await _ensureUser(targetUsername);
     if (meId == null || targetId == null) return;
     try {
-      if (following) {
-        await client.from('follows').delete().match({
+      if (isNowFollowing) {
+        await client.from('follows').insert({
           'follower_id': meId,
           'following_id': targetId,
         });
       } else {
-        await client.from('follows').insert({
+        await client.from('follows').delete().match({
           'follower_id': meId,
           'following_id': targetId,
         });
       }
     } catch (_) {}
   }
+
+  // Kept for callers still using the old `following` name.
+  Future<void> setFollowLegacy({
+    required String targetUsername,
+    required String me,
+    required bool following,
+  }) =>
+      setFollow(
+        targetUsername: targetUsername,
+        me: me,
+        isNowFollowing: following,
+      );
 
   // ---------------------------------------------------------------- stories
 
@@ -329,19 +373,20 @@ class BackendDataSource {
           .order('created_at', ascending: false);
       final grouped = <String, Map<String, dynamic>>{};
       for (final r in rows) {
-        final user = (r['users'] as Map);
-        final username = user['username'] as String;
+        final user = (r['users'] as Map?) ?? const {};
+        final username = user['username'] as String? ?? '';
+        if (username.isEmpty) continue;
         final entry = grouped.putIfAbsent(
           username,
           () => {
             'username': username,
-            'profileImage': user['avatar_url'],
+            'profileImage': user['avatar_url'] ?? '',
             'isSeen': false,
             'stories': <Map<String, dynamic>>[],
           },
         );
         (entry['stories'] as List).add({
-          'imageUrl': r['image_url'],
+          'imageUrl': r['image_url'] ?? '',
           'id': r['id'],
         });
       }
@@ -357,6 +402,8 @@ class BackendDataSource {
     required String username,
     required String imagePath,
   }) async {
+    if (imagePath.isEmpty || imagePath.startsWith('http')) return null;
+    if (!await File(imagePath).exists()) return null;
     final client = _init();
     if (client == null) return null;
     try {
@@ -395,9 +442,9 @@ class BackendDataSource {
         for (final r in rows)
           {
             'id': r['id'],
-            'username': (r['users'] as Map)['username'],
-            'profilePic': (r['users'] as Map)['avatar_url'],
-            'videoUrl': r['video_url'],
+            'username': (r['users'] as Map?)?['username'] ?? '',
+            'profilePic': (r['users'] as Map?)?['avatar_url'] ?? '',
+            'videoUrl': r['video_url'] ?? '',
             'caption': r['caption'] ?? '',
             'likes': '${r['likes_count'] ?? 0}',
             'comments': '${r['comments_count'] ?? 0}',
@@ -417,6 +464,11 @@ class BackendDataSource {
     required String videoPath,
     required String caption,
   }) async {
+    if (videoPath.isEmpty ||
+        videoPath.startsWith('http') ||
+        !await File(videoPath).exists()) {
+      return null;
+    }
     final client = _init();
     if (client == null) return null;
     try {

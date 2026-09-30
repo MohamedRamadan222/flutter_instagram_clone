@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/state/auth_store.dart';
 import 'package:flutter_instagram_clone/core/state/feed_posts_store.dart';
+import 'package:flutter_instagram_clone/core/state/reels_store.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
 import 'package:flutter_instagram_clone/feature/auth/presentation/views/add_profile_picture_screen.dart';
 import 'package:flutter_instagram_clone/feature/auth/presentation/views/birthday_screen.dart';
@@ -106,7 +107,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/user/:username',
         builder: (context, state) {
-          final username = state.pathParameters['username']!;
+          final username = state.pathParameters['username'] ?? '';
+          if (username.isEmpty) return const MainScreen();
           final user = DummyData.accounts.firstWhere(
             (a) => a['username'] == username,
             orElse: () => _userFallback(username),
@@ -117,15 +119,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/reels',
         builder: (context, state) {
-          final index =
+          final raw =
               int.tryParse(state.uri.queryParameters['index'] ?? '') ?? 0;
+          final reels = ref.read(reelsProvider);
+          final index = reels.isEmpty
+              ? 0
+              : raw.clamp(0, reels.length - 1);
           return ReelsScreen(initialIndex: index);
         },
       ),
       GoRoute(
         path: '/comments/:postId',
         builder: (context, state) {
-          final postId = state.pathParameters['postId']!;
+          final postId = state.pathParameters['postId'] ?? '';
+          if (postId.isEmpty) return const MainScreen();
           final post = ref.read(feedPostsProvider).firstWhere(
                 (p) => p['id'] == postId,
                 orElse: () => <String, dynamic>{
@@ -137,7 +144,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             backgroundColor: Colors.black,
             appBar: AppBar(
               backgroundColor: Colors.black,
-              title: Text('Comments'),
+              title: const Text('Comments'),
             ),
             body: CommentsScreen(post: post, asPage: true),
           );

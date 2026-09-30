@@ -15,7 +15,7 @@ class IGButton extends StatelessWidget {
   const IGButton({
     super.key,
     required this.text,
-    required this.onPressed,
+    this.onPressed,
     this.isPrimary = true,
     this.isLoading = false,
     this.height = 40.0,
@@ -31,11 +31,11 @@ class IGButton extends StatelessWidget {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          backgroundColor: isPrimary
-              ? (isDisabled
-                    ? AppColors.blue.withValues(alpha: 0.4)
-                    : AppColors.blue)
-              : Colors.grey[900],
+          backgroundColor:
+              isPrimary ? AppColors.blue : Colors.grey[900],
+          disabledBackgroundColor: isPrimary
+              ? AppColors.blue.withValues(alpha: 0.4)
+              : Colors.grey.shade800,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadiusGeometry.circular(32.r),
           ),

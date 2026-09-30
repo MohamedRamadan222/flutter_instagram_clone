@@ -32,4 +32,13 @@ class LocalCache {
       // cache is best-effort
     }
   }
+
+  Future<void> clear() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final key in prefs.getKeys().where((k) => k.startsWith(_prefix))) {
+        await prefs.remove(key);
+      }
+    } catch (_) {}
+  }
 }

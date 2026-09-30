@@ -18,7 +18,9 @@ class FeedPostsStore extends Notifier<List<Map<String, dynamic>>> {
   String get _me => DummyData.currentUser['username'] as String;
 
   @override
-  List<Map<String, dynamic>> build() => List.of(PostDummyData.posts);
+  List<Map<String, dynamic>> build() => [
+        for (final p in PostDummyData.posts) Map<String, dynamic>.of(p),
+      ];
 
   /// Reloads page 1 from the backend. Returns false when there is no backend
   /// or the fetch failed (state keeps the current/cached posts).
@@ -30,9 +32,15 @@ class FeedPostsStore extends Notifier<List<Map<String, dynamic>>> {
           .read(backendDataSourceProvider)
           .fetchPosts(page: 1, me: _me);
       if (posts == null) return false;
+      if (posts.isEmpty) {
+        // Empty backend: keep current feed instead of wiping to blank.
+        _page = 1;
+        _hasMore = false;
+        return true;
+      }
       state = posts;
       _page = 1;
-      _hasMore = true;
+      _hasMore = posts.length >= BackendDataSource.pageSize;
       ref.read(postReactionsProvider.notifier).seedBatch(posts);
       return true;
     } finally {
@@ -49,11 +57,23 @@ class FeedPostsStore extends Notifier<List<Map<String, dynamic>>> {
       final next = await ref
           .read(backendDataSourceProvider)
           .fetchPosts(page: _page + 1, me: _me);
-      if (next == null) {
+      if (next == null) return false; // transient error: retry next scroll
+      if (next.isEmpty) {
         _hasMore = false;
         return false;
       }
-      state = [...state, ...next];
+      final existingIds = {for (final p in state) p['id']};
+      final fresh = [
+        for (final p in next)
+          if (!existingIds.contains(p['id'])) p,
+      ];
+      if (fresh.isEmpty) {
+        _page++;
+        return true;
+      }
+      state = [...state, ...fresh];
+      ref.read(postReactionsProvider.notifier).seedBatch(fresh);
+      if (next.length < BackendDataSource.pageSize) _hasMore = false;
       _page++;
       return true;
     } finally {
@@ -65,8 +85,12 @@ class FeedPostsStore extends Notifier<List<Map<String, dynamic>>> {
   /// first and the remote post (with public urls) is inserted; otherwise the
   /// local-path post is used, so both modes show instantly (P3-2 acceptance).
   Future<void> addPost(Map<String, dynamic> post) async {
+    final id = post['id'] as String?;
+    if (id == null || id.isEmpty) return;
+    final rawMedia = post['media'] as List? ?? [];
+    if (rawMedia.isEmpty) return;
     final mediaPaths = [
-      for (final m in post['media'] as List) (m as Map)['url'] as String,
+      for (final m in rawMedia) '${(m as Map)['url'] ?? ''}',
     ];
     final remote = await ref
         .read(backendDataSourceProvider)

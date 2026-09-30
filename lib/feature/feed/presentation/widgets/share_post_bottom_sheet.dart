@@ -21,9 +21,9 @@ class _SharePostBottomSheetState extends State<SharePostBottomSheet> {
       ClipboardData(text: 'ig://post/${widget.post['id']}'),
     );
     if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Link copied')));
+    messenger.showSnackBar(const SnackBar(content: Text('Link copied')));
   }
 
   @override
@@ -31,9 +31,10 @@ class _SharePostBottomSheetState extends State<SharePostBottomSheet> {
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             Text(
               'Share',
               style: GoogleFonts.outfit(
@@ -51,11 +52,11 @@ class _SharePostBottomSheetState extends State<SharePostBottomSheet> {
                   (a) => ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: CustomCircleAvatar(
-                      imgUrl: a['profilePic'],
+                      imgUrl: '${a['profilePic'] ?? ''}',
                       radius: 20.r,
                     ),
                     title: Text(
-                      a['username'],
+                      '${a['username'] ?? ''}',
                       style: GoogleFonts.outfit(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -67,9 +68,14 @@ class _SharePostBottomSheetState extends State<SharePostBottomSheet> {
                       size: 20,
                     ),
                     onTap: () {
+                      final messenger = ScaffoldMessenger.of(context);
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Post sent to ${a['username']}')),
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Post sent to ${a['username'] ?? ''}',
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -95,7 +101,8 @@ class _SharePostBottomSheetState extends State<SharePostBottomSheet> {
               ),
               onTap: _copyLink,
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );

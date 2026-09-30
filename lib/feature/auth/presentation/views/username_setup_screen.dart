@@ -21,7 +21,10 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
   void initState() {
     super.initState();
     controller.addListener(() {
-      _isUsernameValid = controller.text.length > 2;
+      final valid = controller.text.length > 2;
+      if (valid != _isUsernameValid) {
+        setState(() => _isUsernameValid = valid);
+      }
     });
   }
 
@@ -58,10 +61,12 @@ class _UsernameSetupScreenState extends State<UsernameSetupScreen> {
               height: 40,
               child: IGButton(
                 text: 'Next',
-                onPressed: () {
-                  // Navigate to terms step
-                  context.push('/signup/terms');
-                },
+                onPressed: _isUsernameValid
+                    ? () {
+                        // Navigate to terms step
+                        context.push('/signup/terms');
+                      }
+                    : null,
               ),
             ),
           ],

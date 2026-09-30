@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/common/widgets/feed_states.dart';
 import 'package:flutter_instagram_clone/core/state/auth_store.dart';
 import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
@@ -42,7 +43,7 @@ class _ProfileContentState extends ConsumerState<ProfileContent> {
     }
     ref
         .read(followProvider.notifier)
-        .toggle(widget.user['username'] as String);
+        .toggle('${widget.user['username'] ?? ''}');
   }
 
   void _onSecondaryAction() {
@@ -69,11 +70,15 @@ class _ProfileContentState extends ConsumerState<ProfileContent> {
 
   int get _gridCount {
     if (_tabIndex == 1) return DummyData.exploreMedia.length;
+    if (_tabIndex == 2) return 0; // tagged: no backend yet, show empty
     return DummyData.savedPosts.length;
   }
 
   Widget _gridItem(int i) {
     if (_tabIndex == 1) {
+      if (DummyData.exploreMedia.isEmpty) {
+        return Container(color: Colors.grey.shade900);
+      }
       // reels tab: static video/image tiles until real reel media exists
       final item = DummyData.exploreMedia[i % DummyData.exploreMedia.length];
       final isVideo = item['type'] == 'video';
@@ -87,25 +92,36 @@ class _ProfileContentState extends ConsumerState<ProfileContent> {
             )
           else
             CachedNetworkImage(
-              imageUrl: item['url'],
+              imageUrl: '${item['url'] ?? ''}',
               fit: BoxFit.cover,
               placeholder: (context, url) => Shimmer.fromColors(
                 baseColor: AppColors.shimmerBase,
                 highlightColor: AppColors.shimmerHighlight,
                 child: Container(color: Colors.black),
               ),
+              errorWidget: (context, url, error) => Container(
+                color: Colors.grey.shade900,
+                child: const Icon(Icons.broken_image, color: Colors.grey),
+              ),
             ),
         ],
       );
     }
+    if (DummyData.savedPosts.isEmpty) {
+      return Container(color: Colors.grey.shade900);
+    }
     // posts / tagged tabs share the savedPosts grid (static for now)
     return CachedNetworkImage(
-      imageUrl: DummyData.savedPosts[i]['image'],
+      imageUrl: '${DummyData.savedPosts[i]['image'] ?? ''}',
       fit: BoxFit.cover,
       placeholder: (context, url) => Shimmer.fromColors(
         baseColor: AppColors.shimmerBase,
         highlightColor: AppColors.shimmerHighlight,
         child: Container(color: Colors.black),
+      ),
+      errorWidget: (context, url, error) => Container(
+        color: Colors.grey.shade900,
+        child: const Icon(Icons.broken_image, color: Colors.grey),
       ),
     );
   }
@@ -113,16 +129,17 @@ class _ProfileContentState extends ConsumerState<ProfileContent> {
   @override
   Widget build(BuildContext context) {
     final user = widget.user;
+    final username = '${user['username'] ?? ''}';
     final posts = DummyData.savedPosts;
     final isFollowing = ref.watch(
-      followProvider.select((f) => f[user['username']] ?? false),
+      followProvider.select((f) => f[username] ?? false),
     );
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
         title: Text(
-          user['username'],
+          username.isEmpty ? 'Profile' : username,
           style: GoogleFonts.outfit(
             color: Colors.white,
             fontWeight: FontWeight.w700,
@@ -153,7 +170,7 @@ class _ProfileContentState extends ConsumerState<ProfileContent> {
                   Row(
                     children: [
                       CustomCircleAvatar(
-                        imgUrl: user['profilePic'],
+                        imgUrl: '${user['profilePic'] ?? ''}',
                         radius: 36.r,
                       ),
                       Expanded(
@@ -179,14 +196,14 @@ class _ProfileContentState extends ConsumerState<ProfileContent> {
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    user['name'] ?? '',
+                    '${user['name'] ?? ''}',
                     style: GoogleFonts.outfit(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
-                    user['bio'] ?? '',
+                    '${user['bio'] ?? ''}',
                     style: GoogleFonts.outfit(color: Colors.white),
                   ),
                   SizedBox(height: 10.h),
@@ -266,6 +283,13 @@ class _ProfileContentState extends ConsumerState<ProfileContent> {
               childCount: _gridCount,
             ),
           ),
+          if (_gridCount == 0)
+            const SliverToBoxAdapter(
+              child: EmptyState(
+                icon: Icons.photo_library_outlined,
+                title: 'No posts yet',
+              ),
+            ),
         ],
       ),
     );

@@ -25,20 +25,32 @@ class CommentsStore
 
   int countOf(String postId) => of(postId).length;
 
-  /// Phase 5: replaces a post's comments with backend rows when configured.
+  /// Phase 5: replaces a post's comments with backend rows when configured,
+  /// merging optimistic local comments instead of discarding them.
   Future<bool> hydrate(String postId) async {
     final comments =
         await ref.read(backendDataSourceProvider).fetchComments(postId);
     if (comments == null) return false;
-    state = {...state, postId: comments};
+    final local = state[postId] ?? const <Map<String, dynamic>>[];
+    final seen = {
+      for (final c in comments) '${c['username']}|${c['comment']}',
+    };
+    final merged = [
+      ...comments,
+      for (final c in local)
+        if (!seen.contains('${c['username']}|${c['comment']}')) c,
+    ];
+    state = {...state, postId: merged};
     return true;
   }
 
   void add(String postId, String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
     final comment = <String, dynamic>{
       'username': DummyData.currentUser['username'],
       'profilePic': DummyData.currentUser['profilePic'],
-      'comment': text,
+      'comment': trimmed,
       'likes': 0,
       'time': timeago.format(DateTime.now()),
     };
@@ -50,7 +62,7 @@ class CommentsStore
     ref.read(backendDataSourceProvider).addComment(
           postId: postId,
           username: DummyData.currentUser['username'] as String,
-          text: text,
+          text: trimmed,
         );
   }
 }

@@ -1,10 +1,12 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_instagram_clone/core/common/widgets/feed_states.dart';
 import 'package:flutter_instagram_clone/core/config/app_config.dart';
 import 'package:flutter_instagram_clone/core/state/feed_posts_store.dart';
 import 'package:flutter_instagram_clone/core/state/reels_store.dart';
 import 'package:flutter_instagram_clone/core/state/stories_store.dart';
+import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/post_dummy_data.dart';
 import 'package:flutter_instagram_clone/core/utils/threads_dummy_data.dart';
 import 'package:flutter_instagram_clone/feature/create/presentation/views/create_post_screen.dart';
@@ -37,20 +39,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   // scroll controller to preserve position
   late final ScrollController _scrollController;
 
+  // P6-1: initial backend hydrate state (shimmer / error).
+  bool _hydrating = false;
+  bool _hydrateError = false;
+
   // random indices for special sections (start from 1 to avoid first post),
   // computed against the seeded feed; posts only grow afterwards (P3-2).
   int get _totalItems => PostDummyData.posts.length + 2;
 
-  late final int suggestedIndex =
-      1 + _random.nextInt(_totalItems - 1);
+  late final int suggestedIndex = _safeRandomSlot(exclude: -1);
 
-  late final int threadsIndex = _generateThreadsIndex();
+  late final int threadsIndex = _safeRandomSlot(exclude: suggestedIndex);
 
-  int _generateThreadsIndex() {
-    int index;
-    do {
+  int _safeRandomSlot({required int exclude}) {
+    if (_totalItems <= 2) return 1;
+    if (_totalItems == 3) return exclude == 1 ? 2 : 1;
+    var index = 1 + _random.nextInt(_totalItems - 1);
+    var guard = 0;
+    while (index == exclude && guard++ < 10) {
       index = 1 + _random.nextInt(_totalItems - 1);
-    } while (index == suggestedIndex);
+    }
     return index;
   }
 
@@ -61,19 +69,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (AppConfig.hasBackend) _hydrateBackend();
   }
 
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
   /// P5-3: first backend page + stories + reels, once, when configured.
   Future<void> _hydrateBackend() async {
-    final feed = ref.read(feedPostsProvider.notifier);
-    final refreshed = await feed.refresh();
-    if (refreshed) {
-      ref.read(storiesProvider.notifier).hydrate();
-      ref.read(reelsProvider.notifier).hydrate();
+    if (!mounted) return;
+    setState(() {
+      _hydrating = true;
+      _hydrateError = false;
+    });
+    var failed = false;
+    try {
+      final feed = ref.read(feedPostsProvider.notifier);
+      final refreshed = await feed.refresh();
+      if (refreshed) {
+        ref.read(storiesProvider.notifier).hydrate();
+        ref.read(reelsProvider.notifier).hydrate();
+      } else {
+        failed = true;
+      }
+    } catch (_) {
+      failed = true;
     }
+    if (!mounted) return;
+    setState(() {
+      _hydrating = false;
+      _hydrateError = failed;
+    });
   }
 
   /// P5-3: load the next backend page when the user nears the bottom.
   void _onScroll() {
     if (!_scrollController.hasClients) return;
+    if (!AppConfig.hasBackend) return;
     final position = _scrollController.position;
     if (position.pixels > position.maxScrollExtent - 400) {
       ref.read(feedPostsProvider.notifier).loadMore();
@@ -93,6 +127,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final posts = ref.watch(feedPostsProvider);
     final stories = ref.watch(storiesProvider);
     final totalItems = posts.length + 2;
+
+    // P6-1: initial load shimmer, backend error, and empty feed.
+    if (_hydrating && posts.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Instagram',
+            style: GoogleFonts.grandHotel(
+              fontWeight: FontWeight.w600,
+              fontSize: 28.sp,
+              color: Colors.white,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: ListView(
+          children: const [
+            StoryStripShimmer(),
+            PostCardShimmer(),
+            PostCardShimmer(),
+          ],
+        ),
+      );
+    }
+    if (_hydrateError && posts.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Instagram'), centerTitle: true),
+        body: ErrorState(
+          message: 'Couldn\'t load the feed. Check your connection.',
+          onRetry: _hydrateBackend,
+        ),
+      );
+    }
+    if (posts.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Instagram'), centerTitle: true),
+        body: EmptyState(
+          icon: Icons.photo_library_outlined,
+          title: 'No posts yet',
+          subtitle: 'Be the first to share a photo.',
+          actionLabel: 'Create post',
+          onAction: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CreatePostScreen()),
+            );
+          },
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -107,6 +191,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         actions: [
           // P3-5: create a new post from the feed
           IconButton(
+            tooltip: 'Create post',
             onPressed: () {
               Navigator.push(
                 context,
@@ -116,13 +201,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             icon: const Icon(Icons.add_box_outlined),
           ),
           IconButton(
+            tooltip: 'Notifications',
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const ActivityScreen()),
               );
             },
-            icon: Icon(Icons.favorite_border),
+            icon: const Icon(Icons.favorite_border),
           ),
         ],
       ),
@@ -144,13 +230,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 itemCount: stories.length,
                 itemBuilder: (context, index) {
                   final story = stories[index];
+                  final storyUsername = '${story['username'] ?? ''}';
                   return StoryCircle(
                     story: story,
-                    forceSeen: _seenStories.contains(story['username']),
+                    forceSeen: _seenStories.contains(storyUsername),
                     onViewed: () {
                       if (!mounted) return;
                       setState(() {
-                        _seenStories.add(story['username']);
+                        _seenStories.add(storyUsername);
                       });
                     },
                     onAddStory: story['userName'] == 'Your story'
@@ -185,9 +272,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               if (postIndex < 0 || postIndex >= posts.length) {
                 return const SizedBox.shrink();
               }
+              final snap = posts[postIndex];
               return PostCard(
-                snap: posts[postIndex],
-                isMyPost: false,
+                snap: snap,
+                isMyPost:
+                    snap['username'] ==
+                    DummyData.currentUser['username'],
               );
             }, childCount: totalItems),
           ),

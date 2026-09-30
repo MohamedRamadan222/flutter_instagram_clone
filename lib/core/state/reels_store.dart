@@ -9,22 +9,26 @@ import 'package:flutter_instagram_clone/core/utils/reel_dummy_data.dart';
 /// hydrates from Supabase (`hydrate`) with offline cache fallback.
 class ReelsStore extends Notifier<List<Map<String, dynamic>>> {
   @override
-  List<Map<String, dynamic>> build() => List.of(ReelDummyData.reels);
+  List<Map<String, dynamic>> build() => [
+        for (final r in ReelDummyData.reels) Map<String, dynamic>.of(r),
+      ];
 
   /// Phase 5: replaces the list with backend reels when configured.
   Future<bool> hydrate() async {
     final reels = await ref.read(backendDataSourceProvider).fetchReels();
-    if (reels == null) return false;
+    if (reels == null || reels.isEmpty) return false;
     state = reels;
     return true;
   }
 
   Future<void> addReel(Map<String, dynamic> reel) async {
+    final videoPath = reel['videoUrl'] as String? ?? '';
+    if (videoPath.isEmpty) return;
     final remote = await ref
         .read(backendDataSourceProvider)
         .createReel(
           username: DummyData.currentUser['username'] as String,
-          videoPath: reel['videoUrl'] as String,
+          videoPath: videoPath,
           caption: (reel['caption'] as String?) ?? '',
         );
     state = [remote ?? reel, ...state];
