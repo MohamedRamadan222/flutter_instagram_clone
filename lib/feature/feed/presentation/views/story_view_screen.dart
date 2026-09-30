@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
 import 'package:flutter_instagram_clone/core/state/stories_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
+import 'package:flutter_instagram_clone/core/utils/image_cache.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -134,6 +135,8 @@ class _StoryViewScreenState extends ConsumerState<StoryViewScreen> {
           children: [
             PageView.builder(
               controller: _pageController,
+              // P6-2: full-screen stories; neighbors init lazily.
+              allowImplicitScrolling: false,
               itemCount: _pages.length,
               onPageChanged: _onPageChanged,
               itemBuilder: (context, index) {
@@ -142,6 +145,11 @@ class _StoryViewScreenState extends ConsumerState<StoryViewScreen> {
                   return CachedNetworkImage(
                     imageUrl: url,
                     fit: BoxFit.cover,
+                    // P6-2: full-screen story; cap decode at 1080px.
+                    memCacheWidth: ImageCacheSizes.feed,
+                    memCacheHeight: ImageCacheSizes.feed,
+                    maxWidthDiskCache: ImageCacheSizes.feed,
+                    maxHeightDiskCache: ImageCacheSizes.feed,
                     placeholder: (context, url) => Shimmer.fromColors(
                       baseColor: AppColors.shimmerBase,
                       highlightColor: AppColors.shimmerHighlight,

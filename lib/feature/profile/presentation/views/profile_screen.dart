@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_instagram_clone/core/state/auth_store.dart';
 import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
+import 'package:flutter_instagram_clone/core/utils/image_cache.dart';
 import 'package:flutter_instagram_clone/feature/message/presentation/views/chat_detail_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -91,17 +93,24 @@ class _ProfileContentState extends ConsumerState<ProfileContent> {
               child: const Icon(Icons.play_arrow, color: Colors.white),
             )
           else
-            CachedNetworkImage(
-              imageUrl: '${item['url'] ?? ''}',
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Shimmer.fromColors(
-                baseColor: AppColors.shimmerBase,
-                highlightColor: AppColors.shimmerHighlight,
-                child: Container(color: Colors.black),
-              ),
-              errorWidget: (context, url, error) => Container(
-                color: Colors.grey.shade900,
-                child: const Icon(Icons.broken_image, color: Colors.grey),
+            RepaintBoundary(
+              child: CachedNetworkImage(
+                imageUrl: '${item['url'] ?? ''}',
+                fit: BoxFit.cover,
+                // P6-2: reels-tab tiles; decode 400px not full-res.
+                memCacheWidth: ImageCacheSizes.grid,
+                memCacheHeight: ImageCacheSizes.grid,
+                maxWidthDiskCache: ImageCacheSizes.grid,
+                maxHeightDiskCache: ImageCacheSizes.grid,
+                placeholder: (context, url) => Shimmer.fromColors(
+                  baseColor: AppColors.shimmerBase,
+                  highlightColor: AppColors.shimmerHighlight,
+                  child: Container(color: Colors.black),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey.shade900,
+                  child: const Icon(Icons.broken_image, color: Colors.grey),
+                ),
               ),
             ),
         ],
@@ -111,17 +120,24 @@ class _ProfileContentState extends ConsumerState<ProfileContent> {
       return Container(color: Colors.grey.shade900);
     }
     // posts / tagged tabs share the savedPosts grid (static for now)
-    return CachedNetworkImage(
-      imageUrl: '${DummyData.savedPosts[i]['image'] ?? ''}',
-      fit: BoxFit.cover,
-      placeholder: (context, url) => Shimmer.fromColors(
-        baseColor: AppColors.shimmerBase,
-        highlightColor: AppColors.shimmerHighlight,
-        child: Container(color: Colors.black),
-      ),
-      errorWidget: (context, url, error) => Container(
-        color: Colors.grey.shade900,
-        child: const Icon(Icons.broken_image, color: Colors.grey),
+    return RepaintBoundary(
+      child: CachedNetworkImage(
+        imageUrl: '${DummyData.savedPosts[i]['image'] ?? ''}',
+        fit: BoxFit.cover,
+        // P6-2: 3-col grid; decode 400px.
+        memCacheWidth: ImageCacheSizes.grid,
+        memCacheHeight: ImageCacheSizes.grid,
+        maxWidthDiskCache: ImageCacheSizes.grid,
+        maxHeightDiskCache: ImageCacheSizes.grid,
+        placeholder: (context, url) => Shimmer.fromColors(
+          baseColor: AppColors.shimmerBase,
+          highlightColor: AppColors.shimmerHighlight,
+          child: Container(color: Colors.black),
+        ),
+        errorWidget: (context, url, error) => Container(
+          color: Colors.grey.shade900,
+          child: const Icon(Icons.broken_image, color: Colors.grey),
+        ),
       ),
     );
   }
@@ -234,6 +250,10 @@ class _ProfileContentState extends ConsumerState<ProfileContent> {
                     height: 80.h,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
+                      // P6-2: highlights strip; don't keep offscreen alive.
+                      addAutomaticKeepAlives: false,
+                      addRepaintBoundaries: true,
+                      scrollCacheExtent: ScrollCacheExtent.pixels(200),
                       itemCount: DummyData.collections.length,
                       separatorBuilder: (_, __) => SizedBox(width: 14.w),
                       itemBuilder: (context, i) {
@@ -281,6 +301,9 @@ class _ProfileContentState extends ConsumerState<ProfileContent> {
             delegate: SliverChildBuilderDelegate(
               (context, i) => _gridItem(i),
               childCount: _gridCount,
+              // P6-2: grid tiles are cheap; drop offscreen ones.
+              addAutomaticKeepAlives: false,
+              addRepaintBoundaries: true,
             ),
           ),
           if (_gridCount == 0)

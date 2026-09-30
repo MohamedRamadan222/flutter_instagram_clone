@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/feed_states.dart';
@@ -143,6 +144,10 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                   )
                 : ListView.separated(
                     itemCount: comments.length,
+                    // P6-2: comment rows are cheap; drop offscreen ones.
+                    addAutomaticKeepAlives: false,
+                    addRepaintBoundaries: true,
+                    scrollCacheExtent: ScrollCacheExtent.pixels(300),
                     separatorBuilder: (_, __) => SizedBox(height: 4.h),
                     itemBuilder: (context, i) {
                       final c = comments[i];

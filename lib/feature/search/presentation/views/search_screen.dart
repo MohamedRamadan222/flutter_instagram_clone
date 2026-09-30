@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
+import 'package:flutter_instagram_clone/core/utils/image_cache.dart';
 import 'package:flutter_instagram_clone/feature/profile/presentation/views/user_profile_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -93,6 +94,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
                 childCount: accounts.length,
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: true,
               ),
             )
           else if (media.isEmpty)
@@ -118,26 +121,32 @@ class _SearchScreenState extends State<SearchScreen> {
                 (context, i) {
                   final item = media[i % media.length];
                   final isVideo = item['type'] == 'video';
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      CachedNetworkImage(
-                        imageUrl:
-                            '${item['thumbnail'] ?? item['url'] ?? ''}',
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Shimmer.fromColors(
-                          baseColor: AppColors.shimmerBase,
-                          highlightColor: AppColors.shimmerHighlight,
-                          child: Container(color: Colors.black),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey.shade900,
-                          child: const Icon(
-                            Icons.broken_image,
-                            color: Colors.grey,
+                  return RepaintBoundary(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        CachedNetworkImage(
+                          imageUrl:
+                              '${item['thumbnail'] ?? item['url'] ?? ''}',
+                          fit: BoxFit.cover,
+                          // P6-2: grid tiles paint ~130px; decode 400px.
+                          memCacheWidth: ImageCacheSizes.grid,
+                          memCacheHeight: ImageCacheSizes.grid,
+                          maxWidthDiskCache: ImageCacheSizes.grid,
+                          maxHeightDiskCache: ImageCacheSizes.grid,
+                          placeholder: (context, url) => Shimmer.fromColors(
+                            baseColor: AppColors.shimmerBase,
+                            highlightColor: AppColors.shimmerHighlight,
+                            child: Container(color: Colors.black),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: Colors.grey.shade900,
+                            child: const Icon(
+                              Icons.broken_image,
+                              color: Colors.grey,
+                            ),
                           ),
                         ),
-                      ),
                       if (isVideo)
                         const Positioned(
                           top: 6,
@@ -149,9 +158,13 @@ class _SearchScreenState extends State<SearchScreen> {
                           ),
                         ),
                     ],
+                    ),
                   );
                 },
                 childCount: media.length,
+                // P6-2: grid tiles are cheap; drop offscreen ones.
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: true,
               ),
             ),
         ],

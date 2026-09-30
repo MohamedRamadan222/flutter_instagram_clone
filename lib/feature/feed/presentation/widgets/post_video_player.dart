@@ -19,11 +19,17 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
   bool _isInit = false;
   bool _failed = false;
   bool _isMuted = true;
+  bool _initializing = false;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _createController();
+    // P6-2: defer controller creation until first visible frame so
+    // off-screen feed videos don't all initialize/decode at once.
+    if (widget.videoUrl.isEmpty) {
+      _failed = true;
+    }
   }
 
   @override
@@ -33,12 +39,17 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
       _controller?.dispose();
       _controller = null;
       _isInit = false;
-      _failed = false;
-      _createController();
+      _failed = widget.videoUrl.isEmpty;
+      _initializing = false;
+      _initialized = false;
+      // Re-init lazily on next visible frame (handled in onVisibilityChanged).
     }
   }
 
   Future<void> _createController() async {
+    if (_initializing || _initialized) return;
+    _initializing = true;
+    _initialized = true;
     if (widget.videoUrl.isEmpty) {
       if (!mounted) return;
       setState(() => _failed = true);
@@ -97,6 +108,30 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
+    // P6-2: keep the VisibilityDetector mounted even before init so the
+    // first visible frame triggers lazy init; paused otherwise.
+    return VisibilityDetector(
+      key: ValueKey(
+        'video_${widget.playerId ?? widget.videoUrl}_${identityHashCode(this)}',
+      ),
+      onVisibilityChanged: (info) {
+        const threshold = 0.5;
+        final visible = info.visibleFraction > threshold;
+        if (visible && !_initialized && !_failed) {
+          _createController().then((_) {
+            if (mounted) _playPause(true);
+          });
+          return;
+        }
+        _playPause(visible);
+      },
+      child: RepaintBoundary(
+        child: _buildPlayer(),
+      ),
+    );
+  }
+
+  Widget _buildPlayer() {
     if (_failed) {
       return Container(
         color: Colors.black,
@@ -106,50 +141,45 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
       );
     }
     if (!_isInit || _controller == null) {
-      return const Center(child: CircularProgressIndicator(color: Colors.white));
+      return const SizedBox.expand(
+        child: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
     }
     final size = _controller!.value.size;
     if (size.width == 0 || size.height == 0) {
-      return const Center(child: CircularProgressIndicator(color: Colors.white));
+      return const SizedBox.expand(
+        child: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
     }
-    return VisibilityDetector(
-      key: ValueKey(
-        'video_${widget.playerId ?? widget.videoUrl}_${identityHashCode(this)}',
-      ),
-      onVisibilityChanged: (info) {
-        const threshold = 0.7;
-        _playPause(info.visibleFraction > threshold);
-      },
-      child: Stack(
-        children: [
-          SizedBox.expand(
-            child: FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: size.width,
-                height: size.height,
-                child: VideoPlayer(_controller!),
-              ),
+    return Stack(
+      children: [
+        SizedBox.expand(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: size.width,
+              height: size.height,
+              child: VideoPlayer(_controller!),
             ),
           ),
-          // mute/Unmute icon
-          Positioned(
-            bottom: 12,
-            right: 12,
-            child: IconButton(
-              tooltip: _isMuted ? 'Unmute' : 'Mute',
-              onPressed: _toggleMute,
-              icon: Icon(
-                _isMuted
-                    ? Icons.volume_off_rounded
-                    : Icons.volume_up_rounded,
-                color: Colors.white,
-                size: 22,
-              ),
+        ),
+        // mute/Unmute icon
+        Positioned(
+          bottom: 12,
+          right: 12,
+          child: IconButton(
+            tooltip: _isMuted ? 'Unmute' : 'Mute',
+            onPressed: _toggleMute,
+            icon: Icon(
+              _isMuted
+                  ? Icons.volume_off_rounded
+                  : Icons.volume_up_rounded,
+              color: Colors.white,
+              size: 22,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

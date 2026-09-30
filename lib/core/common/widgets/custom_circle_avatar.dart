@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_instagram_clone/core/utils/image_cache.dart';
 import 'package:shimmer/shimmer.dart';
 
 class CustomCircleAvatar extends StatelessWidget {
@@ -41,6 +42,11 @@ class CustomCircleAvatar extends StatelessWidget {
           width: diameter,
           height: diameter,
           fit: BoxFit.cover,
+          // P6-2: avatars paint at 28-72px; decode ~144px instead of full-res.
+          memCacheWidth: ImageCacheSizes.avatar,
+          memCacheHeight: ImageCacheSizes.avatar,
+          maxWidthDiskCache: ImageCacheSizes.avatar,
+          maxHeightDiskCache: ImageCacheSizes.avatar,
           placeholder: (context, url) => Shimmer.fromColors(
             baseColor: Colors.grey.shade900,
             highlightColor: Colors.grey.shade800,

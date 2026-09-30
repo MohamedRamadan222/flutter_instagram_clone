@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
+import 'package:flutter_instagram_clone/core/utils/image_cache.dart';
 import 'package:flutter_instagram_clone/core/state/comments_store.dart';
 import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/state/post_reactions_store.dart';
@@ -220,6 +221,8 @@ class _PostCardState extends ConsumerState<PostCard> {
                 children: [
                   PageView.builder(
                     controller: _pageController,
+                    // P6-2: multi-media posts; neighbors init lazily via player.
+                    allowImplicitScrolling: false,
                     itemCount: (widget.snap['media'] as List? ?? []).length,
                     onPageChanged: (index) {
                       setState(() {
@@ -233,20 +236,27 @@ class _PostCardState extends ConsumerState<PostCard> {
                       if (media['type'] == 'image') {
                         final url = '${media['url'] ?? ''}';
                         if (url.startsWith('http')) {
-                          return CachedNetworkImage(
-                            imageUrl: url,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            placeholder: (context, url) => Shimmer.fromColors(
-                              baseColor: Colors.grey.shade900,
-                              highlightColor: Colors.grey.shade800,
-                              child: Container(color: Colors.black),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              color: Colors.grey.shade900,
-                              child: const Icon(
-                                Icons.broken_image,
-                                color: Colors.grey,
+                          return RepaintBoundary(
+                            child: CachedNetworkImage(
+                              imageUrl: url,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              // P6-2: full-width post; cap decode at 1080px.
+                              memCacheWidth: ImageCacheSizes.feed,
+                              memCacheHeight: ImageCacheSizes.feed,
+                              maxWidthDiskCache: ImageCacheSizes.feed,
+                              maxHeightDiskCache: ImageCacheSizes.feed,
+                              placeholder: (context, url) => Shimmer.fromColors(
+                                baseColor: Colors.grey.shade900,
+                                highlightColor: Colors.grey.shade800,
+                                child: Container(color: Colors.black),
+                              ),
+                              errorWidget: (context, url, error) => Container(
+                                color: Colors.grey.shade900,
+                                child: const Icon(
+                                  Icons.broken_image,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                           );

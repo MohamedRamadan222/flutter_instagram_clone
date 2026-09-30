@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
+import 'package:flutter_instagram_clone/core/utils/image_cache.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'feature/feed/presentation/views/home_screen.dart';
@@ -123,6 +124,11 @@ class _MainScreenState extends State<MainScreen> {
                   child: CachedNetworkImage(
                     imageUrl: '${user['profilePic'] ?? ''}',
                     fit: BoxFit.cover,
+                    // P6-2: 28px nav avatar; decode 144px.
+                    memCacheWidth: ImageCacheSizes.preview,
+                    memCacheHeight: ImageCacheSizes.preview,
+                    maxWidthDiskCache: ImageCacheSizes.preview,
+                    maxHeightDiskCache: ImageCacheSizes.preview,
                     placeholder: (context, url) =>
                         Container(color: Colors.grey.shade800),
                     errorWidget: (context, url, error) =>

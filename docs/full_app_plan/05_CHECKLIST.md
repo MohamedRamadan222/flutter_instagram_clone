@@ -53,7 +53,7 @@ Copy tick state here. Source of tasks is `02_PHASES.md`.
 ## Phase 6 — Quality
 
 - [x] P6-1 states (loading/empty/error)
-- [ ] P6-2 perf pass
+- [x] P6-2 perf pass
 - [ ] P6-3 permissions + autoplay policy
 - [x] P6-4 tests pass
 

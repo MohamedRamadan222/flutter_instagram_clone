@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/state/post_reactions_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
 import 'package:flutter_instagram_clone/core/utils/dummy_data.dart';
+import 'package:flutter_instagram_clone/core/utils/image_cache.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -161,6 +162,11 @@ class _CollectionPreview extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: preview,
       fit: BoxFit.cover,
+      // P6-2: 44px collection thumb; decode 144px.
+      memCacheWidth: ImageCacheSizes.preview,
+      memCacheHeight: ImageCacheSizes.preview,
+      maxWidthDiskCache: ImageCacheSizes.preview,
+      maxHeightDiskCache: ImageCacheSizes.preview,
       placeholder: (context, url) => Shimmer.fromColors(
         baseColor: AppColors.shimmerBase,
         highlightColor: AppColors.shimmerHighlight,

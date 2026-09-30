@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/feed_states.dart';
@@ -46,6 +47,10 @@ class MessagesScreen extends StatelessWidget {
       ),
       body: ListView.separated(
         itemCount: chats.length,
+        // P6-2: chat rows are cheap; drop offscreen ones.
+        addAutomaticKeepAlives: false,
+        addRepaintBoundaries: true,
+        scrollCacheExtent: ScrollCacheExtent.pixels(300),
         separatorBuilder: (_, __) => Divider(
           color: Colors.grey.shade900,
           height: 1,

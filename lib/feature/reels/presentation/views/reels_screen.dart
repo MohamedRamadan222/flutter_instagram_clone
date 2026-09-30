@@ -135,7 +135,11 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
         controller: _controller,
         scrollDirection: Axis.vertical,
         itemCount: reels.length,
-        itemBuilder: (context, index) => _ReelPage(reel: reels[index]),
+        // P6-2: only the current reel decodes; neighbors init lazily on show.
+        allowImplicitScrolling: false,
+        itemBuilder: (context, index) => RepaintBoundary(
+          child: _ReelPage(reel: reels[index]),
+        ),
       ),
     );
   }

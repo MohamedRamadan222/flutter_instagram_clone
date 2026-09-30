@@ -1,8 +1,10 @@
+import 'package:flutter/rendering.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
 import 'package:flutter_instagram_clone/core/state/threads_likes_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
+import 'package:flutter_instagram_clone/core/utils/image_cache.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -54,6 +56,10 @@ class ThreadsSection extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.symmetric(horizontal: 12.w),
+              // P6-2: horizontal cards; don't keep offscreen alive.
+              addAutomaticKeepAlives: false,
+              addRepaintBoundaries: true,
+              scrollCacheExtent: ScrollCacheExtent.pixels(400),
               itemCount: threads.length,
               separatorBuilder: (_, __) => SizedBox(width: 10.w),
               itemBuilder: (context, index) {
@@ -155,6 +161,11 @@ class _ThreadCard extends ConsumerWidget {
                 height: 80.h,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                // P6-2: card image ~250px wide; decode 600px.
+                memCacheWidth: ImageCacheSizes.card,
+                memCacheHeight: ImageCacheSizes.card,
+                maxWidthDiskCache: ImageCacheSizes.card,
+                maxHeightDiskCache: ImageCacheSizes.card,
                 placeholder: (context, url) => Shimmer.fromColors(
                   baseColor: AppColors.shimmerBase,
                   highlightColor: AppColors.shimmerHighlight,

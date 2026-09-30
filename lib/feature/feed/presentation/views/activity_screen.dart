@@ -5,6 +5,7 @@ import 'package:flutter_instagram_clone/core/common/widgets/feed_states.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/ig_follow_button.dart';
 import 'package:flutter_instagram_clone/core/state/follow_store.dart';
 import 'package:flutter_instagram_clone/core/theme/app_colors.dart';
+import 'package:flutter_instagram_clone/core/utils/image_cache.dart';
 import 'package:flutter_instagram_clone/core/utils/notifications_dummy_data.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -124,6 +125,11 @@ class _Tile extends ConsumerWidget {
               width: 44.w,
               height: 44.w,
               fit: BoxFit.cover,
+              // P6-2: 44px preview; decode 144px.
+              memCacheWidth: ImageCacheSizes.preview,
+              memCacheHeight: ImageCacheSizes.preview,
+              maxWidthDiskCache: ImageCacheSizes.preview,
+              maxHeightDiskCache: ImageCacheSizes.preview,
               placeholder: (context, url) => Shimmer.fromColors(
                 baseColor: AppColors.shimmerBase,
                 highlightColor: AppColors.shimmerHighlight,

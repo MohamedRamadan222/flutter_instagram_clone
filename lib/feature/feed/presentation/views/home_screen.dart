@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -221,12 +222,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         child: CustomScrollView(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
+          // P6-2: keep ~600px offscreen ready; don't decode the whole feed.
+          scrollCacheExtent: ScrollCacheExtent.pixels(600),
           slivers: [
           SliverToBoxAdapter(
             child: SizedBox(
               height: 120.h,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
+                // P6-2: story strip is cheap; don't keep offscreen cells alive.
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: true,
+                scrollCacheExtent: ScrollCacheExtent.pixels(300),
                 itemCount: stories.length,
                 itemBuilder: (context, index) {
                   final story = stories[index];
@@ -252,15 +259,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             child: Divider(color: Colors.grey, height: 1, thickness: 0.2),
           ),
           SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
               // insert suggested users section randomly
               if (index == suggestedIndex) {
-                return SuggestedUsersSection();
+                return const RepaintBoundary(child: SuggestedUsersSection());
               }
               // insert threads section randomly
               if (index == threadsIndex) {
-                return ThreadsSection(
-                  threads: ThreadsDummyData.threads,
+                return RepaintBoundary(
+                  child: ThreadsSection(
+                    threads: ThreadsDummyData.threads,
+                  ),
                 );
               }
               // adjust post index for inserted sections
@@ -273,13 +283,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 return const SizedBox.shrink();
               }
               final snap = posts[postIndex];
-              return PostCard(
-                snap: snap,
-                isMyPost:
-                    snap['username'] ==
-                    DummyData.currentUser['username'],
+              // P6-2: isolate repaints per post; don't keep offscreen
+              // video controllers alive.
+              return RepaintBoundary(
+                child: PostCard(
+                  snap: snap,
+                  isMyPost:
+                      snap['username'] ==
+                      DummyData.currentUser['username'],
+                ),
               );
-            }, childCount: totalItems),
+            },
+              // P6-2: videos + PageViews must drop when offscreen.
+              addAutomaticKeepAlives: false,
+              addRepaintBoundaries: true,
+              childCount: totalItems,
+            ),
           ),
           // P5-3: keep scrolling past an endpoint spinner for the next page
           if (AppConfig.hasBackend)

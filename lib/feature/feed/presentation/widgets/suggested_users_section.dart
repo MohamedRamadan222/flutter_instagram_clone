@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram_clone/core/common/widgets/custom_circle_avatar.dart';
 import 'package:flutter_instagram_clone/core/state/follow_store.dart';
@@ -47,6 +48,10 @@ class SuggestedUsersSection extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.symmetric(horizontal: 12.w),
+              // P6-2: horizontal cards; don't keep offscreen alive.
+              addAutomaticKeepAlives: false,
+              addRepaintBoundaries: true,
+              scrollCacheExtent: ScrollCacheExtent.pixels(300),
               itemCount: dummySuggestedUsers.length,
               separatorBuilder: (_, __) => SizedBox(width: 10.w),
               itemBuilder: (context, index) {
