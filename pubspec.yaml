@@ -59,6 +59,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -101,3 +103,22 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# P7-1: launcher icon from the existing ig icon (1280px source).
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icons/ig_icon.png
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: assets/icons/ig_icon.png
+  remove_alpha_ios: true
+
+# P7-1: splash black + existing wordmark.
+flutter_native_splash:
+  color: "#000000"
+  image: assets/images/ig_logo.png
+  android: true
+  ios: true
+  android_12:
+    color: "#000000"
+    image: assets/images/ig_logo.png
